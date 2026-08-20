@@ -716,3 +716,228 @@ Ahora que tenemos el array con todos los placeholder y URLs, reemplazamos en el 
   @not(empty(body('Mostrar_los_archivos_de_la_carpeta')?['value']))
   ```
   Y configura la condición como `es igual a` `true`
+
+---
+
+## Flujos de Notificación (Ya Configurados)
+
+### Resumen
+
+| # | Flujo | Trigger | Descripción |
+|---|---|---|---|
+| 1 | Notificación Certificación | Programado | Envía correo de notificación de integración aCertificación |
+| 2 | Notificación Producción | Programado | Envía correo de notificación de integración a Producción |
+| 3 | Notificación Estatus | Programado | Envía reporte de estatus al cliente |
+
+### Flujo 1: Notificación de Certificación
+
+**Trigger:** Programado (Martes 9:00 AM Chile)
+
+**Proceso:**
+```
+Python genera HTML → OneDrive → Power Automate lee HTML → Envía correo
+```
+
+**Acciones:**
+1. Ejecutar `python generar_plantillascorreo.py` (genera `qa.html`)
+2. Power Automate lee `plantillas_correo/qa.html` desde OneDrive
+3. Envía correo HTML con firma embebida
+
+**Configuración:**
+- **Para:** *(Configurar destinatarios)*
+- **Asunto:** `NVSCB [Certificación]: Requerimientos Listos para Certificación Nevasa`
+- **¿Es HTML?:** Sí
+
+---
+
+### Flujo 2: Notificación de Producción
+
+**Trigger:** Programado (configurar frecuencia)
+
+**Proceso:**
+```
+Python genera HTML → OneDrive → Power Automate lee HTML → Envía correo
+```
+
+**Acciones:**
+1. Ejecutar `python generar_plantillascorreo.py` (genera `produccion.html`)
+2. Power Automate lee `plantillas_correo/produccion.html` desde OneDrive
+3. Envía correo HTML con firma embebida
+
+**Configuración:**
+- **Para:** *(Configurar destinatarios)*
+- **Asunto:** `NVSCB [Producción]: Requerimientos a Producción`
+- **¿Es HTML?:** Sí
+
+---
+
+### Flujo 3: Notificación de Estatus
+
+**Trigger:** Programado (Lunes y Jueves)
+
+**Proceso:**
+```
+Python genera HTML + Excel → OneDrive → Power Automate lee ambos → Envía correo con adjunto
+```
+
+**Acciones:**
+1. Ejecutar `python generar_reporte_nevasa.py` (genera `Reporte_Estatus_GPI_CB.xlsx`)
+2. Ejecutar `python generar_plantillascorreo.py` (genera `reporte_estatus.html`)
+3. Power Automate lee ambos archivos desde OneDrive
+4. Envía correo HTML con reporte Excel adjunto
+
+**Configuración:**
+- **Para:** *(Configurar destinatarios)*
+- **Asunto:** `GPI CB - Reporte de Estatus [Fecha]`
+- **¿Es HTML?:** Sí
+- **Adjunto:** `Reporte_Estatus_GPI_CB.xlsx`
+
+---
+
+## Flujo de Recepción Automática (Pendiente Aprobación)
+
+### Descripción
+
+Flujo automatizado para recepcionar requerimientos que llegan a un buzón compartido.
+
+### Estado Actual
+
+| Aspecto | Estado |
+|---------|--------|
+| Diseño | ✅ Completado |
+| Implementación | ✅ Completado |
+| Aprobación | ⏸ Pendiente |
+
+### Flujo Completo
+
+```
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│   CLIENTE    │───→│ POWERAUTOMATE│───→│   EXCEL      │───→│   PLANNER    │
+│  (email)     │    │  (buzón)     │    │  (registro)  │    │  (tarjeta)   │
+└──────────────┘    └──────┬───────┘    └──────────────┘    └──────────────┘
+                           │
+                           ├──────────────→ Auto-respuesta al cliente
+                           │
+                           └──────────────→ Notificación Teams
+```
+
+### Acciones del Flujo
+
+| # | Acción | Herramienta | Descripción |
+|---|--------|-------------|-------------|
+| 1 | Trigger | Outlook | Correo entrante en buzón compartido |
+| 2 | Auto-responder | Outlook | Responde automáticamente al cliente |
+| 3 | Registrar | Excel Online | Agrega registro en Seguimiento Requerimientos NevasaCB |
+| 4 | Crear tarjeta | Planner | Crea tarea con información del requerimiento |
+| 5 | Notificar | Teams | Envía mensaje al grupo/equipo |
+
+### Mapeo de Datos
+
+| Campo Correo | Campo Excel | Fórmula/Expresión |
+|--------------|-------------|-------------------|
+| Asunto | Requerimiento | `triggerOutputs()?['subject']` |
+| Cuerpo (texto plano) | Detalle | `triggerOutputs()?['bodyPreview']` |
+| Remitente | Solicitante | `triggerOutputs()?['from']` |
+| Fecha | Fecha Recepción | `utcNow()` |
+| (auto) | Estado | `"Pendiente"` |
+| (auto) | Etapa | `"Sin Formalizar"` |
+| (auto) | Área | *(Asignar manualmente o por regla)* |
+
+### Configuración Requerida
+
+#### 1. Buzón Compartido
+- Crear buzón compartido en Outlook
+- Configurar permisos de lectura para Power Automate
+
+#### 2. Tabla de Excel
+- Asegurar que la tabla `SeguimientoNevasaCB` esté configurada
+- Verificar que las columnas coincidan con el mapeo
+
+#### 3. Planner
+- Crear plan o tablero en Planner
+- Configurar bucket para nuevos requerimientos
+
+#### 4. Teams
+- Identificar canal/grupo de notificaciones
+- Configurar webhook o conexión de Power Automate
+
+### Script de Apoyo: `generar_correo_recepcion.py`
+
+Script para generar template de correo cuando el registro es manual:
+
+```bash
+python scripts/generar_correo_recepcion.py
+```
+
+**Salida:** Template HTML listo para copiar y enviar al buzón de registro.
+
+---
+
+## Flujo Futuro: Integración Azure DevOps (Mejora)
+
+### Descripción
+
+Integración de Power Automate con la API de Azure DevOps para crear Work Items automáticamente.
+
+### Beneficios
+
+- Sincronización automática Excel ↔ Azure DevOps
+- Creación de tarjetas con toda la información
+- Tracking en tiempo real
+- Métricas automáticas
+
+### Requisitos
+
+| Requisito | Descripción |
+|-----------|-------------|
+| Licencia Azure DevOps | Plan de pago requerido |
+| Personal Access Token (PAT) | Token de autenticación |
+| Configuración API | Endpoint y permisos |
+
+### Endpoint de la API
+
+```
+POST https://dev.azure.com/{org}/{project}/_apis/wit/workitems/$Bug?api-version=7.0
+```
+
+### Ejemplo de Body
+
+```json
+[
+  {
+    "op": "add",
+    "path": "/fields/System.Title",
+    "value": "Título del requerimiento"
+  },
+  {
+    "op": "add",
+    "path": "/fields/System.Description",
+    "value": "Detalle del requerimiento"
+  },
+  {
+    "op": "add",
+    "path": "/fields/System.AreaPath",
+    "value": "GPI CB\\Incidencias"
+  }
+]
+```
+
+### Estado
+
+| Aspecto | Estado |
+|---------|--------|
+| Investigación | ✅ Completado |
+| Diseño | ✅ Completado |
+| Implementación | ⏸ Pendiente (requiere licencia) |
+
+---
+
+## Resumen de Todos los Flujos
+
+| # | Flujo | Estado | Trigger | Herramienta |
+|---|---|---|---|---|
+| 1 | Certificación QA | ✅ Activo | Martes 9AM | Power Automate + Python |
+| 2 | Producción | ✅ Activo | Configurar | Power Automate + Python |
+| 3 | Estatus Cliente | ✅ Activo | Lunes/Jueves | Power Automate + Python |
+| 4 | Recepción Automática | ⏸ Pendiente | Correo entrante | Power Automate |
+| 5 | Azure DevOps | 🔮 Futuro | (Manual) | API REST |

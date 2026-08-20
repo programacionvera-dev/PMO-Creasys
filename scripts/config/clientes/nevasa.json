@@ -1,0 +1,91 @@
+{
+  "nombre": "Nevasa",
+  "carpeta_onedrive": "Gestión Nevasa",
+  "subcarpeta": "Gestión y Revisión",
+  "archivo_fuente": "Seguimiento Requerimientos NevasaCB.xlsx",
+  "archivos_salida": {
+    "reporte": "Reporte_Estatus_GPI_CB.xlsx",
+    "powerbi": "Datos_PowerBI_Nevasa.xlsx",
+    "templates": "plantillas_correo"
+  },
+  "url_firma": "https://www.creasys.cl/imagenes/firmas/Firma_Soporte-GPI-520x200.png",
+  "branding": {
+    "color_primario": "#333F48",
+    "color_secundario": "#FA4616",
+    "nombre_reporte": "REPORTE DE ESTATUS - SISTEMA GPI CB"
+  },
+  "mapeo_columnas": {
+    "indice": 0,
+    "requerimiento": 1,
+    "detalle": 2,
+    "area": 3,
+    "solicitante": 4,
+    "categoria": 5,
+    "prioridad": 6,
+    "asignado": 8,
+    "etapa": 9,
+    "fecha_recepcion": 11,
+    "estimado_fin_desarrollo": 14,
+    "real_inicio": 17,
+    "fecha_real_qa": 18,
+    "aprobado_pap": 19,
+    "fecha_produccion": 20,
+    "historia": 25,
+    "periodo": 27
+  },
+  "mapeo_columnas_riesgos": {
+    "id": 0,
+    "descripcion": 1,
+    "probabilidad": 2,
+    "impacto": 3,
+    "estado": 4,
+    "mitigacion": 5,
+    "responsable": 6,
+    "fecha_identificacion": 7,
+    "fecha_cierre": 8,
+    "notas": 9
+  },
+  "mapeo_columnas_lessons": {
+    "id": 0,
+    "fecha": 1,
+    "categoria": 2,
+    "descripcion": 3,
+    "impacto": 4,
+    "leccion": 5,
+    "accion_correctiva": 6,
+    "aplicable_a": 7,
+    "registrado_por": 8
+  },
+  "mapeo_columnas_recursos": {
+    "persona": 0,
+    "horas_estimadas": 1,
+    "horas_reales": 2,
+    "capacidad_semanal": 3,
+    "fase_actual": 4,
+    "asignado_a": 5
+  },
+  "estados": {
+    "completado": ["Producción", "Certificación Nevasa"],
+    "en_progreso": ["Sin Formalizar", "Análisis", "Desarrollo", "Certificación Creasys", "Stand By", "Cancelado"],
+    "pendiente": ["Pendiente"]
+  },
+  "estados_riesgo": ["Abierto", "Mitigado", "Cerrado"],
+  "categorias_lesson": ["Técnico", "Proceso", "Comunicación", "Recurso", "Cliente"],
+  "fases_recurso": ["Cola", "Desarrollo", "QA", "Producción"],
+  "prioridades": {
+    "0": "MÁXIMA",
+    "1": "ALTA",
+    "vacío": "Sin Prioridad"
+  },
+  "configuracion": {
+    "hh_diarias": 8,
+    "porcentaje_marca": 0.25,
+    "capacidad_semanal_default": 40,
+    "umbrales_riesgo": {
+      "critico": 7,
+      "alto": 4,
+      "medio": 2,
+      "bajo": 1
+    }
+  }
+}

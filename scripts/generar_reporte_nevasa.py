@@ -1,6 +1,14 @@
 """
 Generador de Reporte Ejecutivo GPI CB
 Lee 'Seguimiento Requerimientos NevasaCB.xlsx' y genera 'Reporte_Estatus_GPI_CB.xlsx'
+
+Incluye:
+- Resumen Ejecutivo
+- Detalle por Área
+- Requerimientos en Producción
+- Análisis de Riesgos (si existe hoja "Riesgos")
+- Lessons Learned (si existe hoja "Lessons Learned")
+- Análisis de Recursos (si existe hoja "Recursos")
 """
 
 import sys
@@ -807,6 +815,38 @@ def main():
     crear_resumen_ejecutivo(wb, metricas, fecha_gen)
     crear_detalle_por_area(wb, filas, fecha_gen)
     crear_requerimientos_produccion(wb, filas, fecha_gen)
+
+    # ==================== MÓDULOS ADICIONALES ====================
+    # Intentar agregar módulos adicionales si las hojas existen
+    try:
+        from generar_riesgos import leer_riesgos, calcular_metricas as metricas_riesgos, agregar_hoja_riesgos
+        riesgos = leer_riesgos()
+        if riesgos:
+            metricas_r = metricas_riesgos(riesgos)
+            agregar_hoja_riesgos(wb, riesgos, metricas_r, fecha_gen)
+            print(f"  Riesgos: {metricas_r['total']} ({metricas_r['criticos']} críticos)")
+    except Exception as e:
+        print(f"  [i] Riesgos no disponibles: {e}")
+
+    try:
+        from generar_lessons_learned import leer_lessons, calcular_metricas as metricas_lessons, agregar_hoja_lessons
+        lessons = leer_lessons()
+        if lessons:
+            metricas_l = metricas_lessons(lessons)
+            agregar_hoja_lessons(wb, lessons, metricas_l, fecha_gen)
+            print(f"  Lessons Learned: {metricas_l['total']}")
+    except Exception as e:
+        print(f"  [i] Lessons Learned no disponibles: {e}")
+
+    try:
+        from generar_recursos import leer_recursos, calcular_metricas as metricas_recursos, agregar_hoja_recursos
+        recursos = leer_recursos()
+        if recursos:
+            metricas_rd = metricas_recursos(recursos)
+            agregar_hoja_recursos(wb, recursos, metricas_rd, fecha_gen)
+            print(f"  Recursos: {metricas_rd['total']} personas")
+    except Exception as e:
+        print(f"  [i] Recursos no disponibles: {e}")
 
     archivo_temp = ARCHIVO_SALIDA_REPORTE.replace(".xlsx", "_temp.xlsx")
     wb.save(archivo_temp)

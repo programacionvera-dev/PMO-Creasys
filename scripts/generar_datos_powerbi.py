@@ -5,7 +5,7 @@ import os, sys
 from datetime import datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from config.rutas import ARCHIVO_FUENTE, ARCHIVO_SALIDA_POWERBI_POWERBI, HH_DIARIAS
+from config.rutas import ARCHIVO_FUENTE, ARCHIVO_SALIDA_POWERBI, HH_DIARIAS
 
 try:
     import openpyxl
@@ -230,8 +230,92 @@ def escribir_excel(filas):
     for i, p in enumerate(pris):
         ws_dim3.append([p, i])
 
-    wb.save(ARCHIVO_SALIDA_POWERBI)
-    print(f"  Archivo generado: {ARCHIVO_SALIDA_POWERBI}")
+    print(f"  Hojas base generadas: Datos, Dim_Area, Dim_Etapa, Dim_Prioridad")
+    return wb
+
+
+def agregar_hoja_riesgos_powerbi(wb, archivo_fuente):
+    """Agrega tabla de riesgos para Power BI."""
+    try:
+        import openpyxl
+        wb_src = openpyxl.load_workbook(archivo_fuente, read_only=True)
+        if "Riesgos" not in wb_src.sheetnames:
+            wb_src.close()
+            return False
+
+        ws_src = wb_src["Riesgos"]
+        ws_dst = wb.create_sheet("Riesgos")
+
+        headers = ["ID", "Descripcion", "Probabilidad", "Impacto", "Estado",
+                    "Mitigacion", "Responsable", "Fecha_Identificacion", "Fecha_Cierre", "Notas"]
+        ws_dst.append(headers)
+
+        for r in range(2, ws_src.max_row + 1):
+            valores = [ws_src.cell(r, c).value for c in range(1, 11)]
+            if all(v is None for v in valores):
+                continue
+            ws_dst.append(valores)
+
+        wb_src.close()
+        return True
+    except Exception:
+        return False
+
+
+def agregar_hoja_lessons_powerbi(wb, archivo_fuente):
+    """Agrega tabla de lessons learned para Power BI."""
+    try:
+        import openpyxl
+        wb_src = openpyxl.load_workbook(archivo_fuente, read_only=True)
+        if "Lessons Learned" not in wb_src.sheetnames:
+            wb_src.close()
+            return False
+
+        ws_src = wb_src["Lessons Learned"]
+        ws_dst = wb.create_sheet("Lessons")
+
+        headers = ["ID", "Fecha", "Categoria", "Descripcion", "Impacto",
+                    "Leccion", "Accion_Correctiva", "Aplicable_a", "Registrado_por"]
+        ws_dst.append(headers)
+
+        for r in range(2, ws_src.max_row + 1):
+            valores = [ws_src.cell(r, c).value for c in range(1, 10)]
+            if all(v is None for v in valores):
+                continue
+            ws_dst.append(valores)
+
+        wb_src.close()
+        return True
+    except Exception:
+        return False
+
+
+def agregar_hoja_recursos_powerbi(wb, archivo_fuente):
+    """Agrega tabla de recursos para Power BI."""
+    try:
+        import openpyxl
+        wb_src = openpyxl.load_workbook(archivo_fuente, read_only=True)
+        if "Recursos" not in wb_src.sheetnames:
+            wb_src.close()
+            return False
+
+        ws_src = wb_src["Recursos"]
+        ws_dst = wb.create_sheet("Recursos")
+
+        headers = ["Persona", "Horas_Estimadas", "Horas_Reales", "Capacidad_Semanal",
+                    "Fase_Actual", "Asignado_a"]
+        ws_dst.append(headers)
+
+        for r in range(2, ws_src.max_row + 1):
+            valores = [ws_src.cell(r, c).value for c in range(1, 7)]
+            if all(v is None for v in valores):
+                continue
+            ws_dst.append(valores)
+
+        wb_src.close()
+        return True
+    except Exception:
+        return False
 
 
 def main():
@@ -239,7 +323,15 @@ def main():
     if not filas:
         print("No se encontraron datos.")
         return
-    escribir_excel(filas)
+    wb = escribir_excel(filas)
+
+    # Agregar tablas adicionales si existen
+    from config.rutas import ARCHIVO_FUENTE
+    agregar_hoja_riesgos_powerbi(wb, ARCHIVO_FUENTE)
+    agregar_hoja_lessons_powerbi(wb, ARCHIVO_FUENTE)
+    agregar_hoja_recursos_powerbi(wb, ARCHIVO_FUENTE)
+
+    wb.save(ARCHIVO_SALIDA_POWERBI)
 
     print("\n=== RESUMEN ===")
     total = len(filas)
@@ -254,7 +346,7 @@ def main():
     print(f"  1. Abrir Power BI Desktop")
     print(f"  2. Obtener datos > Excel")
     print(f"  3. Seleccionar: {ARCHIVO_SALIDA_POWERBI}")
-    print(f"  4. Cargar tabla 'Datos'")
+    print(f"  4. Cargar tablas: Datos, Riesgos, Lessons, Recursos")
 
 
 if __name__ == "__main__":

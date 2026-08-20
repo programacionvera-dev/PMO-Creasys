@@ -4,7 +4,7 @@ import sys
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from config.rutas import ARCHIVO_FUENTE, CARPETA_SALIDA_TEMPLATES_TEMPLATES, URL_FIRMA
+from config.rutas import ARCHIVO_FUENTE, CARPETA_SALIDA_TEMPLATES, URL_FIRMA
 
 def mapear_prioridad(valor):
     """Mapea el valor del Excel a texto de prioridad"""
