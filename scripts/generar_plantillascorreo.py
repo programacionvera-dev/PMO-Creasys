@@ -4,7 +4,7 @@ import sys
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from config.rutas import ARCHIVO_FUENTE, CARPETA_SALIDA_TEMPLATES, URL_FIRMA
+from config.rutas import ARCHIVO_FUENTE, CARPETA_SALIDA_TEMPLATES, URL_FIRMA, MAPEO_COLUMNAS
 
 def mapear_prioridad(valor):
     """Mapea el valor del Excel a texto de prioridad"""
@@ -35,30 +35,33 @@ def leer_datos():
     wb = openpyxl.load_workbook(ARCHIVO_FUENTE, read_only=True)
     ws = wb['Seguimiento Nevasa']
     
+    # Usar mapeo de columnas desde configuración
+    m = MAPEO_COLUMNAS
+    
     qa_items = []
     prod_items = []
     todos_items = []
     
     for r in range(5, ws.max_row + 1):
-        etapa = ws.cell(r, 10).value  # Columna 10: Etapa
+        etapa = ws.cell(r, m["etapa"] + 1).value  # +1 porque openpyxl usa base 1
         if not etapa:
             continue
             
         item = {
-            'periodo': ws.cell(r, 28).value,           # Col 28: Periodo
-            'categoria': ws.cell(r, 6).value,           # Col 6: Categoría
-            'prioridad': ws.cell(r, 7).value,           # Col 7: Prioridad
-            'area': ws.cell(r, 4).value,                # Col 4: Área
-            'fecha_recepcion': ws.cell(r, 12).value,    # Col 12: Fecha Recepción
-            'solicitante': ws.cell(r, 5).value,         # Col 5: Solicitante
-            'requerimiento': ws.cell(r, 2).value,       # Col 2: Requerimiento/Incidencia
-            'detalle': ws.cell(r, 3).value,             # Col 3: Detalle Req/Incidencia
-            'asignado_a': ws.cell(r, 9).value,          # Col 9: Asignado a
-            'fecha_qa': ws.cell(r, 19).value,           # Col 19: Fecha Real QA
-            'plan_prueba': ws.cell(r, 27).value,        # Col 27: Plan de Prueba
+            'periodo': ws.cell(r, m["periodo"] + 1).value,
+            'categoria': ws.cell(r, m["categoria"] + 1).value,
+            'prioridad': ws.cell(r, m["prioridad"] + 1).value,
+            'area': ws.cell(r, m["area"] + 1).value,
+            'fecha_recepcion': ws.cell(r, m["fecha_recepcion"] + 1).value,
+            'solicitante': ws.cell(r, m["solicitante"] + 1).value,
+            'requerimiento': ws.cell(r, m["requerimiento"] + 1).value,
+            'detalle': ws.cell(r, m["detalle"] + 1).value,
+            'asignado_a': ws.cell(r, m["asignado"] + 1).value,
+            'fecha_qa': ws.cell(r, m["fecha_real_qa"] + 1).value,
+            'plan_prueba': ws.cell(r, m["plan_prueba"] + 1).value,
             'etapa': etapa,
-            'historia': ws.cell(r, 26).value,           # Col 26: Historia
-            'fecha_produccion': ws.cell(r, 20).value,   # Col 20: Fecha Producción
+            'historia': ws.cell(r, m["historia"] + 1).value,
+            'fecha_produccion': ws.cell(r, m["fecha_produccion"] + 1).value,
         }
         
         todos_items.append(item)

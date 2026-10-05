@@ -6,9 +6,6 @@ Incluye:
 - Resumen Ejecutivo
 - Detalle por Área
 - Requerimientos en Producción
-- Análisis de Riesgos (si existe hoja "Riesgos")
-- Lessons Learned (si existe hoja "Lessons Learned")
-- Análisis de Recursos (si existe hoja "Recursos")
 """
 
 import sys
@@ -160,29 +157,35 @@ def leer_fuente():
     wb = openpyxl.load_workbook(ARCHIVO_FUENTE, read_only=False)
     ws = wb["Seguimiento Nevasa"]
     filas = []
+    
+    # Cargar mapeo de columnas desde configuración
+    from config.rutas import MAPEO_COLUMNAS
+    m = MAPEO_COLUMNAS
+    
     for r in range(5, ws.max_row + 1):
         valores = [ws.cell(r, c).value for c in range(1, ws.max_column + 1)]
         if all(v is None for v in valores):
             continue
         
-        # Mapeo de columnas según nueva estructura
-        indice = valores[0] if len(valores) > 0 and valores[0] else None             # Col 1
-        requerimiento = valores[1] if len(valores) > 1 and valores[1] else ""  # Col 2
-        detalle = valores[2] if len(valores) > 2 and valores[2] else ""        # Col 3
-        area = valores[3] if len(valores) > 3 and valores[3] else ""           # Col 4
-        solicitante = valores[4] if len(valores) > 4 and valores[4] else ""    # Col 5
-        categoria = valores[5] if len(valores) > 5 and valores[5] else ""      # Col 6
-        prioridad_raw = valores[6] if len(valores) > 6 else None              # Col 7
-        asignado_a = valores[8] if len(valores) > 8 and valores[8] else ""    # Col 9
-        etapa = valores[9] if len(valores) > 9 and valores[9] else "Pendiente"  # Col 10
-        fecha_recepcion = valores[11] if len(valores) > 11 else None          # Col 12
-        real_inicio = valores[17] if len(valores) > 17 else None              # Col 18
-        fecha_real_qa = valores[18] if len(valores) > 18 else None            # Col 19
-        aprobado_pap = valores[19] if len(valores) > 19 and valores[19] else ""  # Col 20
-        fecha_produccion = valores[20] if len(valores) > 20 else None         # Col 21
-        historia = valores[25] if len(valores) > 25 and valores[25] else ""   # Col 26
-        periodo = valores[27] if len(valores) > 27 else None                  # Col 28
-        estimado_fin_desarrollo = valores[14] if len(valores) > 14 else None  # Col 15 (O)
+        # Mapeo de columnas usando configuración
+        indice = valores[m["indice"]] if len(valores) > m["indice"] else None
+        requerimiento = valores[m["requerimiento"]] if len(valores) > m["requerimiento"] and valores[m["requerimiento"]] else ""
+        detalle = valores[m["detalle"]] if len(valores) > m["detalle"] and valores[m["detalle"]] else ""
+        area = valores[m["area"]] if len(valores) > m["area"] and valores[m["area"]] else ""
+        solicitante = valores[m["solicitante"]] if len(valores) > m["solicitante"] and valores[m["solicitante"]] else ""
+        categoria = valores[m["categoria"]] if len(valores) > m["categoria"] and valores[m["categoria"]] else ""
+        prioridad_raw = valores[m["prioridad"]] if len(valores) > m["prioridad"] else None
+        orden_prioridad = valores[m["orden_prioridad"]] if len(valores) > m["orden_prioridad"] and valores[m["orden_prioridad"]] is not None else ""
+        asignado_a = valores[m["asignado"]] if len(valores) > m["asignado"] and valores[m["asignado"]] else ""
+        etapa = valores[m["etapa"]] if len(valores) > m["etapa"] and valores[m["etapa"]] else "Pendiente"
+        fecha_recepcion = valores[m["fecha_recepcion"]] if len(valores) > m["fecha_recepcion"] else None
+        real_inicio = valores[m["real_inicio"]] if len(valores) > m["real_inicio"] else None
+        fecha_real_qa = valores[m["fecha_real_qa"]] if len(valores) > m["fecha_real_qa"] else None
+        aprobado_pap = valores[m["aprobado_pap"]] if len(valores) > m["aprobado_pap"] and valores[m["aprobado_pap"]] else ""
+        fecha_produccion = valores[m["fecha_produccion"]] if len(valores) > m["fecha_produccion"] else None
+        historia = valores[m["historia"]] if len(valores) > m["historia"] and valores[m["historia"]] else ""
+        periodo = valores[m["periodo"]] if len(valores) > m["periodo"] else None
+        estimado_fin_desarrollo = valores[m["estimado_fin_desarrollo"]] if len(valores) > m["estimado_fin_desarrollo"] else None
         
         # Mapeo de prioridad
         if prioridad_raw is None or prioridad_raw == "" or prioridad_raw == "Sin Prioridad":
@@ -244,6 +247,7 @@ def leer_fuente():
             "periodo": periodo_str,
             "tipo": str(categoria) if categoria else "Sin tipo",
             "prioridad": str(prioridad).upper(),
+            "orden_prioridad": orden_prioridad,
             "area": area,
             "fecha_solicitud": fecha_recepcion_str,
             "quien_solicita": solicitante,
@@ -591,22 +595,23 @@ def crear_detalle_por_area(wb, filas, fecha_gen):
     ws.column_dimensions["A"].width = 5
     ws.column_dimensions["B"].width = 30
     ws.column_dimensions["C"].width = 12
-    ws.column_dimensions["D"].width = 40
-    ws.column_dimensions["E"].width = 45
-    ws.column_dimensions["F"].width = 18
-    ws.column_dimensions["G"].width = 15
-    ws.column_dimensions["H"].width = 18
+    ws.column_dimensions["D"].width = 12
+    ws.column_dimensions["E"].width = 40
+    ws.column_dimensions["F"].width = 45
+    ws.column_dimensions["G"].width = 18
+    ws.column_dimensions["H"].width = 15
     ws.column_dimensions["I"].width = 18
     ws.column_dimensions["J"].width = 18
     ws.column_dimensions["K"].width = 18
-    ws.column_dimensions["L"].width = 15
-    ws.column_dimensions["M"].width = 18
-    ws.column_dimensions["N"].width = 12
-    ws.column_dimensions["O"].width = 45
+    ws.column_dimensions["L"].width = 18
+    ws.column_dimensions["M"].width = 15
+    ws.column_dimensions["N"].width = 18
+    ws.column_dimensions["O"].width = 12
+    ws.column_dimensions["P"].width = 45
 
-    _merge_y_escribir(ws, 1, 1, 1, 15, "DETALLE DE REQUERIMIENTOS POR ÁREA",
+    _merge_y_escribir(ws, 1, 1, 1, 16, "DETALLE DE REQUERIMIENTOS POR ÁREA",
                        FONT_TITULO, ALIGN_CENTER)
-    _merge_y_escribir(ws, 2, 1, 2, 15, f"Fecha: {fecha_gen}",
+    _merge_y_escribir(ws, 2, 1, 2, 16, f"Fecha: {fecha_gen}",
                        FONT_FECHA, ALIGN_CENTER)
 
     items_no_produccion = [f for f in filas if f["estado_raw"] != "Producción"]
@@ -650,7 +655,7 @@ def crear_detalle_por_area(wb, filas, fecha_gen):
     ))
 
     row = 4
-    headers = ["#", "Área", "Prioridad", "Requerimiento", "Detalle Requerimiento", "Solicitante",
+    headers = ["#", "Área", "Prioridad", "Orden Prioridad", "Requerimiento", "Detalle Requerimiento", "Solicitante",
                "Estado", "Fecha Solicitud", "Fecha Inicio Ejecución", "Estimado Fin Desarrollo",
                "Fecha Entrega QA", "Aprobado PaP", "Fecha Entrega Producción", "Periodo", "Observaciones"]
 
@@ -665,6 +670,7 @@ def crear_detalle_por_area(wb, filas, fecha_gen):
             item["indice"],
             item["_area_norm"],
             item["prioridad"],
+            item["orden_prioridad"],
             item["requerimiento"],
             item["detalle_requerimiento"],
             item["quien_solicita"],
@@ -681,12 +687,10 @@ def crear_detalle_por_area(wb, filas, fecha_gen):
         fill_estado = _obtener_fill_estado(item["estado_raw"])
         for c, v in enumerate(vals, 1):
             celda = ws.cell(row, c, v)
-            if c in (1, 3, 7, 8, 9, 10, 11, 12, 13, 14):
+            if c in (1, 3, 4, 7, 8, 9, 10, 11, 12, 13, 14, 15):
                 alineacion = ALIGN_CENTER
-            elif c in (4, 5, 15):
+            elif c in (5, 6, 16):
                 alineacion = Alignment(horizontal="left", vertical="center", wrap_text=True)
-            elif c == 6:
-                alineacion = Alignment(horizontal="center", vertical="center")
             else:
                 alineacion = None
             _aplicar_estilo_celda(celda, font=FONT_BODY, border=THIN_BORDER,
@@ -696,11 +700,11 @@ def crear_detalle_por_area(wb, filas, fecha_gen):
             ws.cell(row, 3).fill = fill_prio
         row += 1
 
-    ws.auto_filter.ref = f"A4:O{row - 1}"
+    ws.auto_filter.ref = f"A4:P{row - 1}"
 
 
 def crear_requerimientos_produccion(wb, filas, fecha_gen):
-    ws = wb.create_sheet("Requerimientos en Producción")
+    ws = wb.create_sheet("Requerimientos Cerrados")
     ws.column_dimensions["A"].width = 5
     ws.column_dimensions["B"].width = 12
     ws.column_dimensions["C"].width = 40
@@ -711,7 +715,7 @@ def crear_requerimientos_produccion(wb, filas, fecha_gen):
     ws.column_dimensions["H"].width = 12
     ws.column_dimensions["I"].width = 45
 
-    _merge_y_escribir(ws, 1, 1, 1, 9, "REQUERIMIENTOS EN PRODUCCIÓN",
+    _merge_y_escribir(ws, 1, 1, 1, 9, "REQUERIMIENTOS CERRADOS EN PRODUCCIÓN",
                        FONT_TITULO, ALIGN_CENTER)
     _merge_y_escribir(ws, 2, 1, 2, 9, f"Fecha: {fecha_gen}",
                        FONT_FECHA, ALIGN_CENTER)
@@ -815,38 +819,6 @@ def main():
     crear_resumen_ejecutivo(wb, metricas, fecha_gen)
     crear_detalle_por_area(wb, filas, fecha_gen)
     crear_requerimientos_produccion(wb, filas, fecha_gen)
-
-    # ==================== MÓDULOS ADICIONALES ====================
-    # Intentar agregar módulos adicionales si las hojas existen
-    try:
-        from generar_riesgos import leer_riesgos, calcular_metricas as metricas_riesgos, agregar_hoja_riesgos
-        riesgos = leer_riesgos()
-        if riesgos:
-            metricas_r = metricas_riesgos(riesgos)
-            agregar_hoja_riesgos(wb, riesgos, metricas_r, fecha_gen)
-            print(f"  Riesgos: {metricas_r['total']} ({metricas_r['criticos']} críticos)")
-    except Exception as e:
-        print(f"  [i] Riesgos no disponibles: {e}")
-
-    try:
-        from generar_lessons_learned import leer_lessons, calcular_metricas as metricas_lessons, agregar_hoja_lessons
-        lessons = leer_lessons()
-        if lessons:
-            metricas_l = metricas_lessons(lessons)
-            agregar_hoja_lessons(wb, lessons, metricas_l, fecha_gen)
-            print(f"  Lessons Learned: {metricas_l['total']}")
-    except Exception as e:
-        print(f"  [i] Lessons Learned no disponibles: {e}")
-
-    try:
-        from generar_recursos import leer_recursos, calcular_metricas as metricas_recursos, agregar_hoja_recursos
-        recursos = leer_recursos()
-        if recursos:
-            metricas_rd = metricas_recursos(recursos)
-            agregar_hoja_recursos(wb, recursos, metricas_rd, fecha_gen)
-            print(f"  Recursos: {metricas_rd['total']} personas")
-    except Exception as e:
-        print(f"  [i] Recursos no disponibles: {e}")
 
     archivo_temp = ARCHIVO_SALIDA_REPORTE.replace(".xlsx", "_temp.xlsx")
     wb.save(archivo_temp)

@@ -8,7 +8,7 @@ Soporte multi-cliente mediante configuración JSON.
 
 | Script | Descripción |
 |--------|-------------|
-| `generar_reporte_nevasa.py` | Genera reporte ejecutivo en Excel (incluye riesgos, lessons, recursos) |
+| `generar_reporte_nevasa.py` | Genera reporte ejecutivo en Excel |
 | `generar_plantillascorreo.py` | Genera plantillas HTML para correos |
 | `generar_datos_powerbi.py` | Genera datos pre-calculados para Power BI |
 | `generar_riesgos.py` | Genera análisis de riesgos |
@@ -112,14 +112,17 @@ Documentación completa: `docs/FLUJOS_POWER_AUTOMATE.md`
 
 ### Frentes de Trabajo
 
-| # | Frente | Prioridad |
-|---|--------|-----------|
-| 1 | Incidencias | #1 - Máxima |
-| 2 | Mejoras | #2 |
-| 3 | Evolutivos | #3 |
-| 4 | Backlog | #4 |
+Basado en **PMBOK 7ª Edición** - Gestión de Entregas:
+
+| # | Frente | Tipo Azure DevOps | Prioridad PMBOK |
+|---|--------|-------------------|-----------------|
+| 1 | Incidencias | Bug | #1 - Corregir |
+| 2 | Evolutivos | Feature | #2 - Crear |
+| 3 | Mejoras | Product Backlog Item | #3 - Optimizar |
+| 4 | Backlog | Task | #4 - Planificar |
 
 > **Regla**: Las incidencias siempre tienen prioridad sobre cualquier otro requerimiento.
+> *Referencia PMBOK: Gestión de Riesgos - Mitigar problemas críticos antes de crear nuevo valor.*
 
 ### Calendario de Reuniones
 

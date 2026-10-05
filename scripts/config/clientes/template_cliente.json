@@ -22,6 +22,7 @@
     "solicitante": 4,
     "categoria": 5,
     "prioridad": 6,
+    "orden_prioridad": 7,
     "asignado": 8,
     "etapa": 9,
     "fecha_recepcion": 11,
@@ -30,8 +31,9 @@
     "fecha_real_qa": 18,
     "aprobado_pap": 19,
     "fecha_produccion": 20,
-    "historia": 25,
-    "periodo": 27
+    "historia": 26,
+    "plan_prueba": 27,
+    "periodo": 28
   },
   "mapeo_columnas_riesgos": {
     "id": 0,

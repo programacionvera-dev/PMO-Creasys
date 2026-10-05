@@ -6,60 +6,72 @@ Sistema GPI CB para el mercado financiero (Nevasa). Proyecto en Producción con 
 
 ## Frentes de Trabajo
 
-| # | Frente | Tipo Azure DevOps | Prioridad |
-|---|--------|-------------------|-----------|
-| 1 | Incidencias | Bug | #1 - Máxima |
-| 2 | Mejoras | Product Backlog Item | #2 |
-| 3 | Evolutivos | Feature | #3 |
-| 4 | Backlog | Task | #4 |
+Basado en **PMBOK 7ª Edición** - Gestión de Entregas y **Azure DevOps Best Practices**:
+
+| # | Frente | Tipo Azure DevOps | Prioridad PMBOK | Descripción |
+|---|--------|-------------------|-----------------|-------------|
+| 1 | Incidencias | Bug | #1 - Corregir | Defectos, bugs, problemas en producción |
+| 2 | Evolutivos | Feature | #2 - Crear | Nuevas funcionalidades, valor nuevo al negocio |
+| 3 | Mejoras | Product Backlog Item | #3 - Optimizar | Mejoras incrementales a funcionalidad existente |
+| 4 | Backlog | Task | #4 - Planificar | Ideas, tareas pendientes de priorizar |
+
+> **Referencia PMBOK:** Gestión de la Calidad - Los defectos (incidencias) tienen prioridad sobre nuevas funcionalidades para mantener la estabilidad del sistema en producción.
 
 ## Regla Fundamental
 
 > **Las incidencias siempre tienen prioridad sobre cualquier otro requerimiento.**
+> *Alineado con PMBOK: Gestión de Riesgos - Mitigar problemas críticos antes de agregar nueva funcionalidad.*
 
 ## Flujo por Frente
 
-### Incidencias
+### Incidencias (Corregir)
 ```
 Recepción → Diagnóstico → Desarrollo → QA → Producción → Cierre
 ```
+> **PMBOK:** Ciclo de vida de corrección de defectos
 
-### Mejoras
-```
-Solicitud → Análisis → Estimación → Aprobación → Desarrollo → QA → Producción → Cierre
-```
-
-### Evolutivos
+### Evolutivos (Crear)
 ```
 Solicitud → Análisis → Estimación → Planificación → Desarrollo → QA → Producción → Cierre
 ```
+> **PMBOK:** Desarrollo de nuevas funcionalidades (Feature delivery)
 
-### Backlog
+### Mejoras (Optimizar)
+```
+Solicitud → Análisis → Estimación → Aprobación → Desarrollo → QA → Producción → Cierre
+```
+> **PMBOK:** Mejora continua, optimización de procesos existentes
+
+### Backlog (Planificar)
 ```
 Identificación → Priorización → Estimación → Sprint Planning → Desarrollo → Cierre
 ```
+> **PMBOK:** Gestión del alcance - Planificación y priorización
 
 ## Calendario de Reuniones
 
-| Reunión | Frecuencia | Día/Hora |
-|---------|------------|----------|
-| Daily Dev | Diaria | Avance + Blockers + Prioridades |
-| Cliente Nevasa | Semanal | Martes 16:00 |
-| Reporte de estatus | 2x/semana | Lunes y Jueves (mismo formato) |
+| Reunión | Frecuencia | Día/Hora | Referencia PMBOK |
+|---------|------------|----------|------------------|
+| Daily Dev | Diaria | Avance + Blockers + Prioridades | Comunicaciones del equipo |
+| Cliente Nevasa | Semanal | Martes 16:00 | Gestión de partes interesadas |
+| Reporte de estatus | 2x/semana | Lunes y Jueves (mismo formato) | Informes de performance |
 
 ### Daily con Equipo Dev
 - **Frecuencia:** Diaria
 - **Duración:** 15-20 minutos
 - **Temas:** Avance, Blockers, Prioridades, Compromisos
+- **PMBOK:** Stand-up meeting, sincronización del equipo
 
 ### Reunión con Cliente (Martes 16:00)
 - **Duración:** 30-45 minutos
-- **Agenda:** Incidencias → Mejoras → Evolutivos → Backlog → Próximos pasos
+- **Agenda:** Incidencias → Evolutivos → Mejoras → Backlog → Próximos pasos
+- **PMBOK:** Revisión de partes interesadas, alineación de expectativas
 
 ### Envío de Reportes
 - **Días:** Lunes y Jueves
 - **Mismo formato** para ambos días
-- **Contenido:** Resumen ejecutivo, incidencias, mejoras, evolutivos, backlog
+- **Contenido:** Resumen ejecutivo, incidencias, evolutivos, mejoras, backlog
+- **PMBOK:** Informes de estado del proyecto
 
 ## Flujos Power Automate
 
@@ -104,13 +116,17 @@ OneDrive
 
 ## Integración Azure DevOps
 
-### Áreas
+### Áreas (Orden según prioridad PMBOK)
 ```
 GPI CB
-├── Incidencias
-├── Evolutivos
-├── Mejoras
-└── Backlog
+├── Incidencias    ← #1 Corregir (Defectos)
+│   ├── Crítica
+│   ├── Alta
+│   ├── Media
+│   └── Baja
+├── Evolutivos     ← #2 Crear (Nuevas funcionalidades)
+├── Mejoras        ← #3 Optimizar (Mejoras incrementales)
+└── Backlog        ← #4 Planificar (Futuro)
 ```
 
 ### Tags Recomendados
@@ -130,10 +146,10 @@ GPI CB
 
 ## Métricas por Frente
 
-| Frente | Métrica |
-|--------|---------|
-| Incidencias | Tiempo promedio resolución |
-| Incidencias | % Resueltas en SLA |
-| Mejoras | Lead time |
-| Evolutivos | Velocidad (Story Points/Sprint) |
-| Backlog | % Completado |
+| Frente | Métrica | Referencia PMBOK |
+|--------|---------|------------------|
+| Incidencias | Tiempo promedio resolución | Gestión de Calidad |
+| Incidencias | % Resueltas en SLA | Acuerdos de Nivel de Servicio |
+| Evolutivos | Velocidad (Story Points/Sprint) | Velocidad del equipo |
+| Mejoras | Lead time | Tiempo de entrega |
+| Backlog | % Completado | Gestión del Alcance |

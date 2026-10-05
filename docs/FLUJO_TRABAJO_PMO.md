@@ -6,22 +6,28 @@ Sistema informático para el mercado financiero (Nevasa). El proyecto se encuent
 
 ### Frentes de Trabajo
 
-| # | Frente | Descripción | Prioridad |
-|---|--------|-------------|-----------|
-| 1 | **Incidencias** | Bugs reportados por el cliente | #1 - Máxima |
-| 2 | **Mejoras** | Solicitadas por el cliente | #2 |
-| 3 | **Evolutivos** | Nuevas funcionalidades solicitadas | #3 |
-| 4 | **Backlog** | Pendientes acumulados internos | #4 |
+Basado en **PMBOK 7ª Edición** - Gestión de Entregas y **Azure DevOps Best Practices**:
+
+| # | Frente | Tipo Azure DevOps | Prioridad PMBOK | Descripción |
+|---|--------|-------------------|-----------------|-------------|
+| 1 | **Incidencias** | Bug | #1 - Corregir | Defectos, bugs, problemas en producción |
+| 2 | **Evolutivos** | Feature | #2 - Crear | Nuevas funcionalidades, valor nuevo al negocio |
+| 3 | **Mejoras** | Product Backlog Item | #3 - Optimizar | Mejoras incrementales a funcionalidad existente |
+| 4 | **Backlog** | Task | #4 - Planificar | Ideas, tareas pendientes de priorizar |
+
+> **Referencia PMBOK:** Gestión de la Calidad - Los defectos (incidencias) tienen prioridad sobre nuevas funcionalidades para mantener la estabilidad del sistema en producción.
 
 ### Regla Fundamental
 > **Las incidencias siempre tienen prioridad sobre cualquier otro requerimiento.**
+> *Alineado con PMBOK: Gestión de Riesgos - Mitigar problemas críticos antes de agregar nueva funcionalidad.*
 
 ---
 
 ## 2. Definición por Frente
 
-### 2.1 INCIDENCIAS
+### 2.1 INCIDENCIAS (Prioridad #1 - Corregir)
 **Qué es:** Error o mal funcionamiento reportado por el cliente.
+**PMBOK:** Gestión de Calidad - Control de defectos
 
 **Ejemplos:**
 - Error al generar un reporte
@@ -33,21 +39,9 @@ Sistema informático para el mercado financiero (Nevasa). El proyecto se encuent
 
 ---
 
-### 2.2 MEJORAS
-**Qué es:** Solicitud de ajuste o optimización a funcionalidad existente.
-
-**Ejemplos:**
-- Cambiar formato de un reporte
-- Agregar filtro adicional
-- Modificar validación existente
-- Ajustar layout de pantalla
-
-**Responsable:** Equipo de desarrollo + Análisis
-
----
-
-### 2.3 EVOLUTIVOS
+### 2.2 EVOLUTIVOS (Prioridad #2 - Crear)
 **Qué es:** Nueva funcionalidad o módulo solicitado por el cliente.
+**PMBOK:** Gestión de Entregas - Crear valor nuevo
 
 **Ejemplos:**
 - Nuevo módulo de consultas
@@ -59,8 +53,23 @@ Sistema informático para el mercado financiero (Nevasa). El proyecto se encuent
 
 ---
 
-### 2.4 BACKLOG
+### 2.3 MEJORAS (Prioridad #3 - Optimizar)
+**Qué es:** Solicitud de ajuste o optimización a funcionalidad existente.
+**PMBOK:** Mejora Continua - Optimizar procesos
+
+**Ejemplos:**
+- Cambiar formato de un reporte
+- Agregar filtro adicional
+- Modificar validación existente
+- Ajustar layout de pantalla
+
+**Responsable:** Equipo de desarrollo + Análisis
+
+---
+
+### 2.4 BACKLOG (Prioridad #4 - Planificar)
 **Qué es:** Pendientes internos que no son solicitados por el cliente.
+**PMBOK:** Gestión del Alcance - Planificación
 
 **Ejemplos:**
 - Refactoring de código
@@ -74,14 +83,14 @@ Sistema informático para el mercado financiero (Nevasa). El proyecto se encuent
 
 ## 3. Flujo por Frente
 
-### 3.1 INCIDENCIAS (Prioridad 1)
+### 3.1 INCIDENCIAS (Prioridad #1 - Corregir)
 
 ```
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
 │  RECEPCIÓN  │───→│ DIAGNÓSTICO │───→│ DESARROLLO  │───→│     QA      │
 └─────────────┘    └─────────────┘    └─────────────┘    └──────┬──────┘
-                                                                │
-                                                                ▼
+                                                                 │
+                                                                 ▼
                     ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
                     │   CIERRE    │←───│ PRODUCCIÓN  │←───│CERTIFICACIÓN│
                     └─────────────┘    └─────────────┘    └─────────────┘
@@ -102,56 +111,22 @@ Sistema informático para el mercado financiero (Nevasa). El proyecto se encuent
 
 ---
 
-### 2.2 MEJORAS (Prioridad 2)
-
-```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│ SOLICITUD   │───→│   ANÁLISIS  │───→│ ESTIMACIÓN  │───→│APROBACIÓN   │
-└─────────────┘    └─────────────┘    └─────────────┘    └──────┬──────┘
-                                                                │
-                                                                ▼
-                    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-                    │   CIERRE    │←───│ PRODUCCIÓN  │←───│ DESARROLLO  │
-                    └─────────────┘    └─────────────┘    └──────┬──────┘
-                                                                │
-                                                                ▼
-                                                          ┌─────────────┐
-                                                          │     QA      │
-                                                          └─────────────┘
-```
-
-**Pasos detallados:**
-
-| Paso | Acción | Responsable | Herramienta |
-|------|--------|-------------|-------------|
-| 1 | Cliente solicita mejora | Cliente | Email/Reunión |
-| 2 | Registrar en Azure DevOps como PBI | PMO | Azure DevOps |
-| 3 | Analizar requisito | Analista | Azure DevOps |
-| 4 | Estimar esfuerzo (Story Points) | Tech Lead | Azure DevOps |
-| 5 | Aprobar con cliente | PMO | Reunión |
-| 6 | Desarrollar en sprint actual | Desarrollador | VS Code |
-| 7 | Pruebas enCertificación | QA | Azure DevOps |
-| 8 | Desplegar a Producción | DevOps | Pipelines |
-| 9 | Notificar al cliente | PMO | Email |
-
----
-
-### 2.3 EVOLUTIVOS (Prioridad 3)
+### 3.2 EVOLUTIVOS (Prioridad #2 - Crear)
 
 ```
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
 │ SOLICITUD   │───→│   ANÁLISIS  │───→│ ESTIMACIÓN  │───→│PLANIFICACIÓN│
 └─────────────┘    └─────────────┘    └─────────────┘    └──────┬──────┘
-                                                                │
-                                                                ▼
+                                                                 │
+                                                                 ▼
                     ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
                     │   CIERRE    │←───│ PRODUCCIÓN  │←───│ DESARROLLO  │
                     └─────────────┘    └─────────────┘    └──────┬──────┘
-                                                                │
-                                                                ▼
-                                                          ┌─────────────┐
-                                                          │     QA      │
-                                                          └─────────────┘
+                                                                 │
+                                                                 ▼
+                                                           ┌─────────────┐
+                                                           │     QA      │
+                                                           └─────────────┘
 ```
 
 **Pasos detallados:**
@@ -171,14 +146,48 @@ Sistema informático para el mercado financiero (Nevasa). El proyecto se encuent
 
 ---
 
-### 2.4 BACKLOG (Prioridad 4)
+### 3.3 MEJORAS (Prioridad #3 - Optimizar)
+
+```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│ SOLICITUD   │───→│   ANÁLISIS  │───→│ ESTIMACIÓN  │───→│APROBACIÓN   │
+└─────────────┘    └─────────────┘    └─────────────┘    └──────┬──────┘
+                                                                 │
+                                                                 ▼
+                    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+                    │   CIERRE    │←───│ PRODUCCIÓN  │←───│ DESARROLLO  │
+                    └─────────────┘    └─────────────┘    └──────┬──────┘
+                                                                 │
+                                                                 ▼
+                                                           ┌─────────────┐
+                                                           │     QA      │
+                                                           └─────────────┘
+```
+
+**Pasos detallados:**
+
+| Paso | Acción | Responsable | Herramienta |
+|------|--------|-------------|-------------|
+| 1 | Cliente solicita mejora | Cliente | Email/Reunión |
+| 2 | Registrar en Azure DevOps como PBI | PMO | Azure DevOps |
+| 3 | Analizar requisito | Analista | Azure DevOps |
+| 4 | Estimar esfuerzo (Story Points) | Tech Lead | Azure DevOps |
+| 5 | Aprobar con cliente | PMO | Reunión |
+| 6 | Desarrollar en sprint actual | Desarrollador | VS Code |
+| 7 | Pruebas enCertificación | QA | Azure DevOps |
+| 8 | Desplegar a Producción | DevOps | Pipelines |
+| 9 | Notificar al cliente | PMO | Email |
+
+---
+
+### 3.4 BACKLOG (Prioridad #4 - Planificar)
 
 ```
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
 │IDENTIFICACIÓN│───→│PRIORIZACIÓN │───→│ ESTIMACIÓN  │───→│   SPRINT    │
 └─────────────┘    └─────────────┘    └─────────────┘    └──────┬──────┘
-                                                                │
-                                                                ▼
+                                                                 │
+                                                                 ▼
                     ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
                     │   CIERRE    │←───│ DESARROLLO  │←───│  PLANNING   │
                     └─────────────┘    └─────────────┘    └─────────────┘
@@ -228,14 +237,14 @@ Sistema informático para el mercado financiero (Nevasa). El proyecto se encuent
 **Duración:** 30-45 minutos
 **Participantes:** PMO, Tech Lead, Cliente (Nevasa)
 
-**Agenda:**
+**Agenda (orden según prioridad PMBOK):**
 
 | # | Tema | Duración | Responsable |
 |---|------|----------|-------------|
-| 1 | Review incidencias de la semana | 10 min | PMO |
-| 2 | Estado de mejoras en curso | 10 min | PMO |
-| 3 | Priorizar evolutivos nuevos | 10 min | PMO + Tech Lead |
-| 4 | Revisar backlog pendiente | 5 min | PMO |
+| 1 | Review incidencias de la semana (#1 Corregir) | 10 min | PMO |
+| 2 | Estado de evolutivos en curso (#2 Crear) | 10 min | PMO |
+| 3 | Estado de mejoras en curso (#3 Optimizar) | 10 min | PMO + Tech Lead |
+| 4 | Revisar backlog pendiente (#4 Planificar) | 5 min | PMO |
 | 5 | Próximos pasos y compromisos | 5 min | PMO + Tech Lead |
 
 **Salida esperada:**
@@ -248,12 +257,12 @@ Sistema informático para el mercado financiero (Nevasa). El proyecto se encuent
 **Frecuencia:** Lunes y Jueves
 **Mismo formato para ambos días**
 
-**Contenido del reporte:**
+**Contenido del reporte (orden según prioridad PMBOK):**
 1. Resumen ejecutivo (métricas)
-2. Incidencias abiertas/cerradas
-3. Mejoras en progreso
-4. Evolutivos planificados
-5. Estado del backlog
+2. Incidencias abiertas/cerradas (#1 Corregir)
+3. Evolutivos en progreso (#2 Crear)
+4. Mejoras en progreso (#3 Optimizar)
+5. Estado del backlog (#4 Planificar)
 
 ### 4.5 Checklist Semanal
 
@@ -286,28 +295,28 @@ Sistema informático para el mercado financiero (Nevasa). El proyecto se encuent
 
 ## 5. Integración con Azure DevOps
 
-### 5.1 Estructura de Áreas
+### 5.1 Estructura de Áreas (Orden según prioridad PMBOK)
 
 ```
 GPI CB (Proyecto)
-├── Incidencias
+├── Incidencias    ← #1 Corregir (Defectos)
 │   ├── Crítica
 │   ├── Alta
 │   ├── Media
 │   └── Baja
-├── Evolutivos
-├── Mejoras
-└── Backlog
+├── Evolutivos     ← #2 Crear (Nuevas funcionalidades)
+├── Mejoras        ← #3 Optimizar (Mejoras incrementales)
+└── Backlog        ← #4 Planificar (Futuro)
 ```
 
 ### 5.2 Tipos de Trabajo
 
-| Azure DevOps | Frente | Uso |
-|--------------|--------|-----|
-| Bug | Incidencias | Errores reportados |
-| Feature | Evolutivos | Nuevas funcionalidades |
-| Product Backlog Item | Mejoras | Mejoras a existente |
-| Task | Backlog | Tareas internas |
+| Azure DevOps | Frente | Prioridad PMBOK | Uso |
+|--------------|--------|-----------------|-----|
+| Bug | Incidencias | #1 - Corregir | Errores reportados |
+| Feature | Evolutivos | #2 - Crear | Nuevas funcionalidades |
+| Product Backlog Item | Mejoras | #3 - Optimizar | Mejoras a existente |
+| Task | Backlog | #4 - Planificar | Tareas internas |
 
 ### 5.3 Campos Personalizados
 
@@ -321,23 +330,23 @@ GPI CB (Proyecto)
 ### 5.4 Queries Útiles
 
 ```sql
--- Incidencias abiertas
+-- Incidencias abiertas (#1 Corregir)
 SELECT * FROM WorkItems
 WHERE [System.TeamProject] = 'GPI CB'
 AND [System.WorkItemType] = 'Bug'
 AND [System.State] <> 'Closed'
 
--- Mejoras pendientes
-SELECT * FROM WorkItems
-WHERE [System.TeamProject] = 'GPI CB'
-AND [System.WorkItemType] = 'Product Backlog Item'
-AND [System.State] = 'New'
-
--- Evolutivos en progreso
+-- Evolutivos en progreso (#2 Crear)
 SELECT * FROM WorkItems
 WHERE [System.TeamProject] = 'GPI CB'
 AND [System.WorkItemType] = 'Feature'
 AND [System.State] = 'Active'
+
+-- Mejoras pendientes (#3 Optimizar)
+SELECT * FROM WorkItems
+WHERE [System.TeamProject] = 'GPI CB'
+AND [System.WorkItemType] = 'Product Backlog Item'
+AND [System.State] = 'New'
 ```
 
 ---
@@ -348,32 +357,32 @@ AND [System.State] = 'Active'
 
 **Asunto:** `GPI CB - Resumen Semanal [Fecha]`
 
-**Contenido:**
+**Contenido (orden según prioridad PMBOK):**
 
 ```html
 <h2>Resumen Semanal GPI CB</h2>
 <p><strong>Período:</strong> [Fecha Inicio] - [Fecha Fin]</p>
 
-<h3>1. Incidencias</h3>
+<h3>1. Incidencias (#1 - Corregir)</h3>
 <ul>
     <li>Resueltas esta semana: [N]</li>
     <li>Abiertas: [N]</li>
     <li>Críticas pendientes: [N]</li>
 </ul>
 
-<h3>2. Mejoras</h3>
-<ul>
-    <li>En desarrollo: [N]</li>
-    <li>Completadas: [N]</li>
-</ul>
-
-<h3>3. Evolutivos</h3>
+<h3>2. Evolutivos (#2 - Crear)</h3>
 <ul>
     <li>En planificación: [N]</li>
     <li>En desarrollo: [N]</li>
 </ul>
 
-<h3>4. Próximos Pasos</h3>
+<h3>3. Mejoras (#3 - Optimizar)</h3>
+<ul>
+    <li>En desarrollo: [N]</li>
+    <li>Completadas: [N]</li>
+</ul>
+
+<h3>4. Próximos Pasos (#4 - Planificar)</h3>
 <ul>
     <li>[Tarea 1]</li>
     <li>[Tarea 2]</li>
@@ -395,13 +404,13 @@ AND [System.State] = 'Active'
 
 ### 7.1 Métricas por Frente
 
-| Frente | Métrica | Fórmula |
-|--------|---------|---------|
-| Incidencias | Tiempo promedio resolución | AVG(Fecha Cierre - Fecha Apertura) |
-| Incidencias | % Resueltas en SLA | (Resueltas en SLA / Total) × 100 |
-| Mejoras | Lead time | AVG(Fecha Producción - Fecha Solicitud) |
-| Evolutivos | Velocidad | Story Points completados / Sprint |
-| Backlog | % Completado | (Completados / Total) × 100 |
+| Frente | Prioridad PMBOK | Métrica | Fórmula |
+|--------|-----------------|---------|---------|
+| Incidencias | #1 - Corregir | Tiempo promedio resolución | AVG(Fecha Cierre - Fecha Apertura) |
+| Incidencias | #1 - Corregir | % Resueltas en SLA | (Resueltas en SLA / Total) × 100 |
+| Evolutivos | #2 - Crear | Velocidad | Story Points completados / Sprint |
+| Mejoras | #3 - Optimizar | Lead time | AVG(Fecha Producción - Fecha Solicitud) |
+| Backlog | #4 - Planificar | % Completado | (Completados / Total) × 100 |
 
 ### 7.2 Dashboard Power BI
 
@@ -435,12 +444,13 @@ AND [System.State] = 'Active'
 
 ## 9. Notas Importantes
 
-1. **Incidencias siempre primero**: No importa qué tan urgente sea una mejora o evolutivo, una incidencia tiene prioridad.
+1. **Incidencias siempre primero**: No importa qué tan urgente sea un evolutivo o mejora, una incidencia tiene prioridad.
+   *Referencia PMBOK: Gestión de Riesgos - Mitigar problemas críticos antes de crear nuevo valor.*
 
 2. **Documentar todo**: Cada interacción con el cliente, cada decisión, cada cambio debe quedar registrado en Azure DevOps.
 
 3. **Comunicar progreso**: El cliente debe saber qué estamos haciendo y cuándo estará listo.
 
-4. **Aprender de errores**: Cada incidencia debe generar una lección learned si es relevante.
+4. **Aprender de errores**: Cada incidencia debe generar una lección aprendida si es relevante.
 
 5. **Revisar SLAs**: Verificar semanalmente que se cumplen los tiempos acordados.
