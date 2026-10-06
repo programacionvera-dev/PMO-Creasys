@@ -48,6 +48,7 @@ def leer_datos():
             continue
             
         item = {
+            'indice': ws.cell(r, m['indice'] + 1).value,
             'periodo': ws.cell(r, m["periodo"] + 1).value,
             'categoria': ws.cell(r, m["categoria"] + 1).value,
             'prioridad': ws.cell(r, m["prioridad"] + 1).value,
@@ -95,7 +96,7 @@ def generar_html_qa(items, fecha):
         
         rows_html += f"""
         <tr>
-            <td style="border:1px solid #ddd;padding:8px;text-align:center">{i}</td>
+            <td style="border:1px solid #ddd;padding:8px;text-align:center">{item.get('indice') or ''}</td>
             <td style="border:1px solid #ddd;padding:8px;text-align:center">{prioridad}</td>
             <td style="border:1px solid #ddd;padding:8px">{item['area'] or ''}</td>
             <td style="border:1px solid #ddd;padding:8px">{item['requerimiento'] or ''}</td>
@@ -108,7 +109,7 @@ def generar_html_qa(items, fecha):
 <html>
 <head><meta charset="UTF-8"></head>
 <body style="font-family:Calibri,sans-serif;margin:20px;color:#333f48">
-    <h2 style="color:#333f48;font-size:20px">&#x1F4CB; Requerimientos Listos para Certificación Nevasa</h2>
+    <h2 style="color:#333f48;font-size:20px">&#x1F4CB; Requerimientos Disponibles Certificación Nevasa</h2>
     <p>Estimados:</p>
     <p>Le informamos que los siguientes requerimientos se encuentran disponibles para su validación en el ambiente de Certificación Nevasa:</p>
     
@@ -118,7 +119,7 @@ def generar_html_qa(items, fecha):
     <table style="border-collapse:collapse;width:100%;margin:20px 0">
         <thead>
             <tr style="background:#333f48;color:white">
-                <th style="border:1px solid #ddd;padding:8px">#</th>
+                <th style="border:1px solid #ddd;padding:8px">Indice</th>
                 <th style="border:1px solid #ddd;padding:8px">Prioridad</th>
                 <th style="border:1px solid #ddd;padding:8px">Área</th>
                 <th style="border:1px solid #ddd;padding:8px">Requerimiento</th>
@@ -131,7 +132,7 @@ def generar_html_qa(items, fecha):
     </table>
     
     <div style="background:#f5f5f5;padding:15px;border-left:4px solid #fa4616;margin:20px 0">
-        <p style="margin:0 0 10px 0"><strong style="color:#fa4616">Importante:</strong> Les solicitamos su pronta coordinación para realizar las pruebas de los requerimientos indicados para que el despliegue a producción se realice sin complicaciones y en el menor tiempo posible.</p>
+        <p style="margin:0 0 10px 0"><strong style="color:#fa4616">Importante:</strong> Si un requerimento aun se encuentra en Certificación Nevasa es debido a que aun no se certifica o contiene actualizaciones. Favor revisar el detalle del requerimiento en el "Reporte_Estatus_GPI_CB" según su Indice.</p>
         <p style="margin:0">Para los requerimientos que contengan Plan de Prueba, estos pueden descargarse para su uso como guía para las pruebas a realizar.</p>
     </div>
     
@@ -149,7 +150,7 @@ def generar_html_produccion(items, fecha):
     for i, item in enumerate(items, 1):
         rows_html += f"""
         <tr>
-            <td style="border:1px solid #ddd;padding:8px;text-align:center">{i}</td>
+            <td style="border:1px solid #ddd;padding:8px;text-align:center">{item.get('indice') or ''}</td>
             <td style="border:1px solid #ddd;padding:8px">{item['area'] or ''}</td>
             <td style="border:1px solid #ddd;padding:8px">{item['requerimiento'] or ''}</td>
             <td style="border:1px solid #ddd;padding:8px">{item['solicitante'] or ''}</td>
@@ -169,7 +170,7 @@ def generar_html_produccion(items, fecha):
     <table style="border-collapse:collapse;width:100%;margin:20px 0">
         <thead>
             <tr style="background:#333f48;color:white">
-                <th style="border:1px solid #ddd;padding:8px">#</th>
+                <th style="border:1px solid #ddd;padding:8px">Indice</th>
                 <th style="border:1px solid #ddd;padding:8px">Área</th>
                 <th style="border:1px solid #ddd;padding:8px">Requerimiento</th>
                 <th style="border:1px solid #ddd;padding:8px">Solicitante</th>
