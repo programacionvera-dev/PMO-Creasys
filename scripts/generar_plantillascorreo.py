@@ -239,7 +239,8 @@ def generar_html_reporte_estatus(metricas, fecha):
     </div>
     
     <p>Quedamos atentos a sus comentarios.</p>
-    
+    <br>
+    <img src="{URL_FIRMA}" alt="Creasys" style="height:250px">
 </body>
 </html>"""
 
