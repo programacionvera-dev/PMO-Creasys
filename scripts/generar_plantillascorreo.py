@@ -132,7 +132,9 @@ def generar_html_qa(items, fecha):
     </table>
     
     <div style="background:#f5f5f5;padding:15px;border-left:4px solid #fa4616;margin:20px 0">
-        <p style="margin:0 0 10px 0"><strong style="color:#fa4616">Importante:</strong> Si un requerimento aun se encuentra en Certificación Nevasa es debido a que aun no se certifica o contiene actualizaciones. Favor revisar el detalle del requerimiento en el "Reporte_Estatus_GPI_CB" según su Indice.</p>
+        <p style="margin:0 0 10px 0"><strong style="color:#fa4616">Importante:</strong> Les solicitamos su pronta coordinación para realizar las pruebas de los requerimientos indicados para que el despliegue a producción se realice sin complicaciones y en el menor tiempo posible.</p>
+        <p style="margin:0 0 10px 0">Si un requerimento aun se encuentra en Certificación Nevasa es debido a que aun no se certifica o contiene actualizaciones. Favor revisar el detalle del requerimiento en el "Reporte_Estatus_GPI_CB" según su Indice.</p>
+        <p style="margin:0 0 10px 0">Para los requerimientos que contengan Plan de Prueba, estos pueden descargarse para su uso como guía para las pruebas a realizar.</p>
         <p style="margin:0">Para los requerimientos que contengan Plan de Prueba, estos pueden descargarse para su uso como guía para las pruebas a realizar.</p>
     </div>
     
