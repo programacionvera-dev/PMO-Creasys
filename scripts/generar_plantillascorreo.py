@@ -58,6 +58,7 @@ def leer_datos():
             'detalle': ws.cell(r, m["detalle"] + 1).value,
             'asignado_a': ws.cell(r, m["asignado"] + 1).value,
             'fecha_qa': ws.cell(r, m["fecha_real_qa"] + 1).value,
+            'aprobado_pap': ws.cell(r, m['aprobado_pap'] + 1).value if 'aprobado_pap' in m else None,
             'plan_prueba': ws.cell(r, m["plan_prueba"] + 1).value,
             'etapa': etapa,
             'historia': ws.cell(r, m["historia"] + 1).value,
@@ -66,11 +67,15 @@ def leer_datos():
         
         todos_items.append(item)
         
-        # QA: todos los de Certificación Nevasa
-        if etapa == 'Certificación Nevasa':
+        # QA: considerar solo desarrollos con aprobado_pap vacío y etapa Certificación Nevasa o Certificación Creasys
+        etapa_str = str(etapa).strip() if etapa else ''
+        aprobado_pap_vacio = not item.get('aprobado_pap') or str(item.get('aprobado_pap')).strip() == ''
+        if etapa_str == 'Certificación Nevasa' and aprobado_pap_vacio:
+            qa_items.append(item)
+        elif etapa_str == 'Certificación Creasys' and aprobado_pap_vacio:
             qa_items.append(item)
         # Produccion: solo incluir si NO tiene fecha Produccion (aun no estan en Produccion)
-        elif etapa == 'Producción' and not item['fecha_produccion']:
+        elif etapa_str == 'Producción' and not item['fecha_produccion']:
             prod_items.append(item)
     
     wb.close()
