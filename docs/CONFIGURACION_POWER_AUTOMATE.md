@@ -77,11 +77,25 @@ Este documento describe cómo configurar Power Automate para generar enlaces de 
 
 | Componente | Requisito | Riesgo si falla |
 |------------|-----------|-----------------|
-| Python | Ejecutarse ANTES del schedule | HTML sin datos actualizados |
+| Python | Ejecutarse ANTES del schedule (automático vía Task Scheduler, ver abajo) | HTML sin datos actualizados |
 | OneDrive | Sincronización automática | HTML desactualizado |
 | Excel | Campo "Plan de Prueba" = nombre exacto del PDF | Links no generados |
 | SharePoint | "Anyone with the link" habilitado | No se pueden crear links |
 | Outlook | Permisos de envío | No se envían correos |
+
+---
+
+## Ejecución Automática de Scripts (Task Scheduler)
+
+Los scripts Python se ejecutan automáticamente en el PC mediante `scripts\ejecutar_generacion.bat`, que corre en orden `generar_reporte_nevasa.py` → `generar_plantillascorreo.py` y registra el resultado en `logs\ejecucion_YYYYMMDD.log`. Si un script falla (ej. Excel de seguimiento abierto → `PermissionError`), el bat aborta con `exit /b 1` y lo deja en el log.
+
+| Tarea | Trigger (hora Chile, PC en Pacific SA) | Genera |
+|---|---|---|
+| `PMO Estatus Mar` | Martes 16:00 | Reporte + plantillas (para envío estatus martes 17:00) |
+| `PMO Estatus Vie` | Viernes 16:00 | Reporte + plantillas (para envío estatus viernes 17:00) |
+| `PMO QA Mie` | Miércoles 16:00 | Reporte + plantillas (para envío QA miércoles 17:00) |
+
+> La holgura de 1 hora es para el sync de OneDrive antes de que disparen los flujos. Las tareas corren con sesión iniciada (modo interactivo); para ejecución sin sesión, guardar la credencial en las propiedades de cada tarea. Los Recurrence de Power Automate deben estar en miércoles 17:00 (QA) y martes/viernes 17:00 (estatus), hora de Chile.
 
 ---
 

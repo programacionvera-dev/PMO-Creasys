@@ -9,5 +9,6 @@ build/
 .eggs/
 *.egg
 .env
+logs/
 .venv/
 venv/
