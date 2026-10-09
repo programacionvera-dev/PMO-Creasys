@@ -67,9 +67,9 @@ Este documento describe cómo configurar Power Automate para generar enlaces de 
 | 2 | Subir a OneDrive | OneDrive | Los HTML se sincronizan automáticamente a OneDrive |
 | 3 | **Disparador** | **Power Automate** | **Recurrence: Cada Martes 9:00 AM Chile** |
 | 4 | Leer HTML | Power Automate | Lee `plantillas_correo/qa.html` desde OneDrive |
-| 5 | Leer Excel | Power Automate | Lee filas con Etapa = "Certificación Nevasa" |
+| 5 | Leer Excel | Power Automate | Lee filas con Etapa = "Certificación Nevasa" o "Certificación Creasys" (filtro en paso 3; Aprobado PAP vacío se valida en 6.2) |
 | 6 | Buscar PDFs | OneDrive | Por cada fila con plan, busca en `/Planes De Prueba/{AÑO}/{MES}/` |
-| 7 | Crear links | OneDrive | Genera enlace anónimo View-only para cada PDF encontrado |
+| 7 | Crear links | OneDrive | Genera enlace anónimo View-only solo para el PDF que coincide con el Plan de la fila (ver 6.7.0) |
 | 8 | Reemplazar | Power Automate | Sustituye `{{PLAN:...}}` por URLs reales en el HTML |
 | 9 | Enviar | Outlook | Envía **1 correo** HTML con firma embebida |
 
@@ -173,7 +173,9 @@ Este documento describe cómo configurar Power Automate para generar enlaces de 
 - **Biblioteca de documentos:** OneDrive
 - **Archivo:** `/Gestión Nevasa/Gestión y Revisión/Seguimiento Requerimientos NevasaCB.xlsx`
 - **Tabla:** SeguimientoNevasaCB
-- **Consulta de filtro:** `Etapa eq 'Certificación Nevasa'`
+- **Consulta de filtro:** `(Etapa eq 'Certificación Nevasa' or Etapa eq 'Certificación Creasys)`
+
+> **Nota:** el filtro de **Aprobado PAP vacío** no se hace en OData (el conector Excel no maneja bien los nulos) sino en la Condición del paso 6.2.
 
 ### Paso 4: Variable - Mapeo de Meses
 
@@ -237,13 +239,13 @@ Este es el paso más complejo. Se ejecuta por cada fila del Excel.
 
 ---
 
-##### 6.2 Condición: Verificar si Plan de Prueba y Periodo tienen valor
+##### 6.2 Condición: Verificar Plan de Prueba y Periodo con valor y Aprobado PAP vacío
 
 **Acción:** Condición
 
 **Condición (usar expresión fx):**
 ```
-@and(not(empty(items('Aplicar_a_cada_uno')?['Plan de Prueba'])), not(empty(items('Aplicar_a_cada_uno')?['Periodo'])))
+@and(not(empty(items('Aplicar_a_cada_uno')?['Plan de Prueba'])), not(empty(items('Aplicar_a_cada_uno')?['Periodo'])), empty(items('Aplicar_a_cada_uno')?['Aprobado PAP']))
 ```
 
 **Cómo configurar:**
@@ -251,7 +253,9 @@ Este es el paso más complejo. Se ejecuta por cada fila del Excel.
 2. Haz clic en el ícono **fx** (funciones)
 3. Pega la expresión de arriba
 
-**Explicación:** Verifica que AMBOS campos tengan valor (Plan de Prueba Y Periodo).
+**Explicación:** Verifica que Plan de Prueba Y Periodo tengan valor y que Aprobado PAP esté vacío. Solo entran a QA los desarrollos pendientes de certificación.
+
+> **⚠️ Usa `empty()`, no el comparador básico:** comparar con `no es igual a + (vacío)` NO filtra nulos del Excel (una celda vacía es `null`, y `null ≠ ""` es verdadero, así que la fila entra igual y luego `int(Periodo)` falla). Con `empty()` las filas vacías quedan fuera.
 
 ---
 
@@ -344,7 +348,26 @@ Este es el paso más complejo. Se ejecuta por cada fila del Excel.
 
 **Seleccionar una salida de los pasos anteriores:** Seleccionar **`value`** de Dynamic Content de "Mostrar los archivos de la carpeta"
 
-> **Importante:** Este loop itera sobre CADA archivo encontrado en la carpeta, creando un vínculo individual para cada uno.
+> **Importante:** Este loop itera sobre CADA archivo encontrado en la carpeta. Para no crear vínculos de más, filtra por nombre antes de crear el vínculo (ver 6.7.0).
+
+---
+
+###### 6.7.0 [SI][SI] Condición: El archivo corresponde al Plan de la fila
+
+**Acción:** Condición (dentro del For each, antes de "Crear un vínculo")
+
+> **⚠️ No uses el selector de contenido dinámico** para el campo del Excel: Power Automate auto-crea un "Para cada uno" extra innecesario. Usa **fx** en ambos lados.
+
+| Campo | Valor |
+|-------|-------|
+| **Campo izquierdo (fx)** | `items('For_each')?['NameNoExt']` |
+| **Operador** | `es igual a` |
+| **Campo derecho (fx)** | `items('Aplicar_a_cada_uno')?['Plan de Prueba']` |
+
+- **[SI]:** continúa a 6.7.1 (Crear vínculo) y 6.7.2 (Anexar).
+- **[NO]:** no hacer nada (el archivo no corresponde a esta fila).
+
+> Ajusta `Aplicar_a_cada_uno` y `For_each` a los nombres reales de tus loops.
 
 ---
 
@@ -469,6 +492,8 @@ SEGUNDO LOOP: Por cada placeholder en ArrayPlanes
 
 Ahora que tenemos el array con todos los placeholder y URLs, reemplazamos en el HTML. Este es un **SEGUNDO loop** separado al del paso 6.
 
+> **⚠️ Ubicación obligatoria:** este loop va a **nivel superior, DESPUÉS** de "Aplicar a cada uno" (paso 7), nunca anidado dentro del loop de filas. Anidarlo provoca O(n²) escrituras sobre `qa.html` (varios minutos de ejecución + errores de bloqueo `423/429/412`).
+
 **Acción:** Aplicar a cada uno
 
 **Seleccionar output:**
@@ -518,7 +543,7 @@ Ahora que tenemos el array con todos los placeholder y URLs, reemplazamos en el 
 | Campo | Valor |
 |-------|-------|
 | **Para** | *(Configurar destinatarios después de pruebas)* |
-| **Asunto** | `NVSCB [Certificación]: Requerimientos Listos para Certificación Nevasa` |
+| **Asunto** | `NVSCB [Certificación]: Requerimientos Disponibles Certificación Nevasa` |
 | **Cuerpo** | Ver abajo |
 | **¿Es HTML?** | `Sí` ← **IMPORTANTE** |
 
@@ -609,8 +634,9 @@ Ahora que tenemos el array con todos los placeholder y URLs, reemplazamos en el 
 | 7.6 | Condición (`@not(empty(body(...)['value'])) es igual a true`) | Control | Loop 1 |
 | **---** | **--- FOR EACH (archivos encontrados) ---** | **---** | **---** |
 | 7.7 | **Aplicar a cada uno** (body/value de archivos) | Control | Loop 1.1 |
-| 7.7.1 | **Crear un vínculo para compartir** (con Id del archivo) | OneDrive | Loop 1.1 |
-| 7.7.2 | **Anexar a variable** (`ArrayPlanes`: NameNoExt + URL web) | Variable | Loop 1.1 |
+| 7.7.0 | Condición (`NameNoExt es igual a Plan de Prueba` de la fila) | Control | Loop 1.1 |
+| 7.7.1 | **Crear un vínculo para compartir** (con Id del archivo, solo [SI]) | OneDrive | Loop 1.1 |
+| 7.7.2 | **Anexar a variable** (`ArrayPlanes`: NameNoExt + URL web, solo [SI]) | Variable | Loop 1.1 |
 | **---** | **--- SEGUNDO LOOP ---** | **---** | **---** |
 | 8.1 | Aplicar a cada uno (ArrayPlanes) | Control | Loop 2 |
 | 8.2 | **Obtener contenido del archivo** | OneDrive | Loop 2 |
@@ -694,7 +720,7 @@ Ahora que tenemos el array con todos los placeholder y URLs, reemplazamos en el 
 
 **Condición:**
 ```
-@and(not(empty(items('Aplicar_a_cada_uno')?['Plan de Prueba'])), not(empty(items('Aplicar_a_cada_uno')?['Periodo'])))
+@and(not(empty(items('Aplicar_a_cada_uno')?['Plan de Prueba'])), not(empty(items('Aplicar_a_cada_uno')?['Periodo'])), empty(items('Aplicar_a_cada_uno')?['Aprobado PAP']))
 ```
 
 ---
@@ -716,6 +742,19 @@ Ahora que tenemos el array con todos los placeholder y URLs, reemplazamos en el 
   @not(empty(body('Mostrar_los_archivos_de_la_carpeta')?['value']))
   ```
   Y configura la condición como `es igual a` `true`
+
+---
+
+### Flujo lento o con error (oct-2026, caso real)
+
+**Síntomas:** el flujo tarda varios minutos y termina en error, o crea cientos de vínculos duplicados.
+
+**Causas encontradas en el exportado:**
+1. La condición de entrada comparaba contra `""` en vez de `empty()` → filas con celdas vacías (`null`) entraban igual y `int(Periodo)` fallaba.
+2. El `For_each` creaba vínculo para TODOS los archivos de la carpeta del mes, sin filtrar por nombre.
+3. El segundo loop (`Obtener contenido + Actualizar archivo`) estaba anidado dentro del loop de filas → O(n²) escrituras sobre `qa.html`.
+
+**Solución aplicada:** condición con `empty()` + Aprobado PAP vacío (6.2), condición `NameNoExt == Plan de Prueba` (6.7.0) y segundo loop a nivel superior (paso 7). Tiempo resultante: ~1 minuto.
 
 ---
 
@@ -745,7 +784,7 @@ Python genera HTML → OneDrive → Power Automate lee HTML → Envía correo
 
 **Configuración:**
 - **Para:** *(Configurar destinatarios)*
-- **Asunto:** `NVSCB [Certificación]: Requerimientos Listos para Certificación Nevasa`
+- **Asunto:** `NVSCB [Certificación]: Requerimientos Disponibles Certificación Nevasa`
 - **¿Es HTML?:** Sí
 
 ---

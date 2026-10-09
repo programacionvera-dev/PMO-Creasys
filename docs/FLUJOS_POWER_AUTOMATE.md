@@ -79,7 +79,7 @@ Este documento describe todos los flujos de Power Automate configurados y planif
 | 2 | Sincronizar | OneDrive sincroniza HTML automáticamente |
 | 3 | Trigger | Power Automate se dispara (Martes 9AM) |
 | 4 | Leer HTML | Lee `plantillas_correo/qa.html` |
-| 5 | Leer Excel | Filtra filas con Etapa = "Certificación Nevasa" |
+| 5 | Leer Excel | Filtra filas con Etapa = "Certificación Nevasa" o "Certificación Creasys" y Aprobado PAP vacío |
 | 6 | Buscar PDFs | Por cada fila con plan, busca en `/Planes De Prueba/` |
 | 7 | Crear links | Genera enlaces anónimos para cada PDF |
 | 8 | Reemplazar | Sustituye `{{PLAN:...}}` por URLs reales |
@@ -88,7 +88,7 @@ Este documento describe todos los flujos de Power Automate configurados y planif
 #### Configuración
 
 - **Para:** *(Configurar destinatarios)*
-- **Asunto:** `NVSCB [Certificación]: Requerimientos Listos para Certificación Nevasa`
+- **Asunto:** `NVSCB [Certificación]: Requerimientos Disponibles Certificación Nevasa`
 - **¿Es HTML?:** Sí
 
 ---
