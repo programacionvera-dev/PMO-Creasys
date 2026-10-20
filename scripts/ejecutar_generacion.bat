@@ -1,7 +1,7 @@
 @echo off
 rem ============================================================
 rem  PMO-Creasys - Generacion automatica de reporte y plantillas
-rem  Ejecuta: generar_reporte_nevasa.py + generar_plantillascorreo.py
+rem  Copia Excel a temporal para evitar bloqueo OneDrive/Excel
 rem  Uso: llamado por Task Scheduler (Mar/Vie/Mie 16:00, hora Chile)
 rem  Log: logs\ejecucion_YYYYMMDD.log
 rem ============================================================
@@ -11,19 +11,20 @@ set LOGDIR=C:\Users\progr\PMO-Creasys\logs
 mkdir "%LOGDIR%" 2>nul
 set LOG=%LOGDIR%\ejecucion_%date:~6,4%%date:~3,2%%date:~0,2%.log
 
-echo [%date% %time%] Inicio generacion automatica >> "%LOG%"
+set SRC=C:\Users\progr\OneDrive - CREASYS S.A\Gesti?n Nevasa\Gesti?n y Revisi?n\Seguimiento Requerimientos NevasaCB.xlsx
+set DST=%TEMP%\seguimiento_temp.xlsx
 
-echo [%date% %time%] Ejecutando generar_reporte_nevasa.py... >> "%LOG%"
-"%PY%" scripts\generar_reporte_nevasa.py >> "%LOG%" 2>&1
+echo [%date% %time%] Inicio generacion automatica >> "%LOG%"
+echo [%date% %time%] Copiando Excel a temporal para evitar bloqueo... >> "%LOG%"
+copy /Y "%SRC%" "%DST%" >> "%LOG%" 2>&1
 if errorlevel 1 (
-  echo [%date% %time%] ERROR en generar_reporte_nevasa.py. Revise que el Excel de seguimiento este cerrado. >> "%LOG%"
-  exit /b 1
+  echo [%date% %time%] ADVERTENCIA: No se pudo copiar el Excel (puede estar abierto). Se intentara leer desde origen. >> "%LOG%"
 )
 
-echo [%date% %time%] Ejecutando generar_plantillascorreo.py... >> "%LOG%"
-"%PY%" scripts\generar_plantillascorreo.py >> "%LOG%" 2>&1
+echo [%date% %time%] Ejecutando reporte y plantillas con copia temporal... >> "%LOG%"
+"%PY%" -c "import sys;sys.path.insert(0,r'scripts');import generar_reporte_nevasa as g, generar_plantillascorreo as gp, config.rutas as r;tmp=r'%DST%';r.ARCHIVO_FUENTE=tmp;g.ARCHIVO_FUENTE=tmp;gp.ARCHIVO_FUENTE=tmp;g.main();gp.main()" >> "%LOG%" 2>&1
 if errorlevel 1 (
-  echo [%date% %time%] ERROR en generar_plantillascorreo.py. >> "%LOG%"
+  echo [%date% %time%] ERROR en generacion. Revise log. >> "%LOG%"
   exit /b 1
 )
 
