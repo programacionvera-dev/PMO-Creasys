@@ -19,8 +19,11 @@ python generar_reporte_nevasa.py
 
 | Hoja | Contenido |
 |---|---|
-| Resumen Ejecutivo | Métricas, indicadores, distribuciones |
+| Dashboard | KPIs y 7 gráficos (etapas, áreas, tipos, períodos, % cumplimiento, PAP y prioridades). 1 página A4 horizontal |
+| Resumen Ejecutivo | Métricas, indicadores, distribuciones y sub-análisis de Certificación Nevasa (aprobados PAP) |
 | Detalle por Área | Listado de requerimientos por área |
+| Requerimientos Cerrados | Requerimientos en Producción agrupados por área |
+| Datos_Graficos | Tablas agregadas que alimentan los gráficos del Dashboard |
 
 ---
 
@@ -29,13 +32,14 @@ python generar_reporte_nevasa.py
 | Estado Fuente | Clasificación |
 |---|---|
 | Producción | Completado |
-| Terminado | Completado |
-| QA Nevasa | En Progreso |
-| En Desarrollo | En Progreso |
-| En Revisión | En Progreso |
-| Integración | En Progreso |
+| Certificación Nevasa | Completado |
+| Cancelado | Completado |
+| Análisis | En Progreso |
+| Desarrollo | En Progreso |
+| Certificación Creasys | En Progreso |
 | Pendiente | Pendiente |
-| Eliminado | Pendiente |
+| Sin Formalizar | Pendiente |
+| Stand By | Pendiente |
 
 ---
 
@@ -201,6 +205,7 @@ Ubicación: Columnas M-N, desde fila 8
 | 1 | Métricas Generales | Total, Completados, En Progreso, Pendientes, % Cumplimiento |
 | 2 | Estado General del Proyecto | Indicador con color |
 | 3 | Distribución por Estado | Estado, Cantidad, % del Total |
+| 3b | Certificación Nevasa - Aprobación PAP | Al costado de la sección 3: Aprobados PAP, Pendientes de Aprobación, Total |
 | 4 | Distribución por Área | Área, Total, Pendiente, En Progreso, Completado |
 | 5 | Distribución por Período | Período, Total, Pendiente, En Progreso, Completado |
 | 6 | Distribución por Prioridad | Prioridad, Cantidad, % del Total |

@@ -18,6 +18,13 @@ from config.rutas import ARCHIVO_FUENTE, ARCHIVO_SALIDA_REPORTE
 
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.chart import BarChart, DoughnutChart, LineChart, Reference
+from openpyxl.chart.label import DataLabelList
+from openpyxl.chart.marker import DataPoint
+from openpyxl.chart.shapes import GraphicalProperties
+from openpyxl.drawing.line import LineProperties
+from openpyxl.worksheet.properties import PageSetupProperties
+from openpyxl.worksheet.page import PageMargins
 
 ESTADOS_COMPLETADO = {"Producción", "Certificación Nevasa", "Cancelado"}
 ESTADOS_EN_PROGRESO = {"Análisis", "Desarrollo", "Certificación Creasys"}
@@ -126,6 +133,23 @@ ORDEN_ESTADOS = [
     "Stand By",
     "Cancelado"
 ]
+
+# Colores para gráficos del Dashboard (tonos con contraste, alineados a Nevasa)
+CHART_COLOR_ESTADO = {
+    "Producción": "FF2E7D32",
+    "Certificación Nevasa": "FF1976D2",
+    "Certificación Creasys": "FF64B5F6",
+    "Desarrollo": "FFFA4616",
+    "Análisis": "FFFFB300",
+    "Sin Formalizar": "FFB0B0B0",
+    "Pendiente": "FF97999B",
+    "Stand By": "FF8D6E63",
+    "Cancelado": "FF333F48",
+}
+CHART_COLOR_PENDIENTE = "FFBDBDBD"
+CHART_COLOR_PROGRESO = "FFFA4616"
+CHART_COLOR_COMPLETADO = "FF2E7D32"
+ORDEN_PRIORIDADES = ["MÁXIMA", "ALTA", "MEDIA/ALTA", "MEDIA", "BAJA", "SP"]
 
 
 def clasificar_estado(estado):
@@ -311,9 +335,11 @@ def calcular_metricas(filas):
 
     por_tipo = defaultdict(int)
     por_tipo_estado = defaultdict(lambda: defaultdict(int))
+    por_tipo_clasif = defaultdict(lambda: defaultdict(int))
     for f in filas:
         por_tipo[f["tipo"]] += 1
         por_tipo_estado[f["tipo"]][f["estado_raw"]] += 1
+        por_tipo_clasif[f["tipo"]][f["estado_clasificado"]] += 1
 
     # Sub-análisis Certificación Nevasa: aprobados PAP vs pendientes de aprobación
     cert_nevasa_items = [f for f in filas if f["estado_raw"] == "Certificación Nevasa"]
@@ -342,6 +368,7 @@ def calcular_metricas(filas):
         "por_prioridad": dict(por_prioridad),
         "por_tipo": dict(por_tipo),
         "por_tipo_estado": {k: dict(v) for k, v in por_tipo_estado.items()},
+        "por_tipo_clasif": {k: dict(v) for k, v in por_tipo_clasif.items()},
     }
 
 
@@ -842,6 +869,289 @@ def crear_requerimientos_produccion(wb, filas, fecha_gen):
         row += 1
 
 
+def crear_hoja_datos_graficos(wb, metricas):
+    """Hoja auxiliar con las tablas agregadas que alimentan los gráficos."""
+    ws = wb.create_sheet("Datos_Graficos")
+    ws.sheet_view.showGridLines = False
+
+    def escribir_tabla(col_start, headers, filas):
+        for j, h in enumerate(headers):
+            celda = ws.cell(1, col_start + j, h)
+            _aplicar_estilo_celda(celda, font=FONT_HEADER, fill=FILL_HEADER, border=THIN_BORDER)
+        for i, fila in enumerate(filas, start=2):
+            for j, v in enumerate(fila):
+                celda = ws.cell(i, col_start + j, v)
+                _aplicar_estilo_celda(celda, font=FONT_BODY, border=THIN_BORDER,
+                                      alignment=ALIGN_CENTER if j > 0 else None)
+        return len(filas) + 1
+
+    for col in range(1, 23):
+        ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = 16
+
+    # Etapas
+    estados = [e for e in ORDEN_ESTADOS if e in metricas["por_estado"]]
+    estados += sorted(e for e in metricas["por_estado"] if e not in ORDEN_ESTADOS)
+    n_estados = escribir_tabla(
+        1, ["Etapa", "Cantidad"],
+        [(e, metricas["por_estado"][e]) for e in estados])
+
+    # Áreas
+    n_areas = escribir_tabla(
+        4, ["Área", "Pendiente", "En Progreso", "Completado"],
+        [(area, d["pendiente"], d["en_progreso"], d["completado"])
+         for area, d in metricas["por_area"].items()])
+
+    # Tipos
+    tipos = [t for t in ["Incidencia", "Solicitud", "Requerimiento", "Mejora", "Evolutivo", "Proceso Manual"]
+             if t in metricas["por_tipo_clasif"]]
+    n_tipos = escribir_tabla(
+        9, ["Tipo", "Pendiente", "En Progreso", "Completado"],
+        [(t, metricas["por_tipo_clasif"][t].get("Pendiente", 0),
+          metricas["por_tipo_clasif"][t].get("En Progreso", 0),
+          metricas["por_tipo_clasif"][t].get("Completado", 0)) for t in tipos])
+
+    # Períodos
+    n_periodos = escribir_tabla(
+        14, ["Período", "Total", "% Cumplimiento"],
+        [(p, d["total"], (d["completado"] / d["total"]) if d["total"] else 0)
+         for p, d in metricas["por_periodo"].items()])
+
+    # Certificación Nevasa - Aprobación PAP
+    cert = metricas["cert_nevasa"]
+    n_pap = escribir_tabla(
+        18, ["Estado PAP", "Cantidad"],
+        [("Aprobados PAP", cert["aprobados"]),
+         ("Pendientes de Aprobación", cert["pendientes"])])
+
+    # Prioridades
+    prioridades = [p for p in ORDEN_PRIORIDADES if p in metricas["por_prioridad"]]
+    n_prio = escribir_tabla(
+        21, ["Prioridad", "Cantidad"],
+        [(p, metricas["por_prioridad"][p]) for p in prioridades])
+
+    return ws, {
+        "estados": n_estados,
+        "areas": n_areas,
+        "tipos": n_tipos,
+        "periodos": n_periodos,
+        "pap": n_pap,
+        "prioridades": n_prio,
+        "lista_estados": estados,
+    }
+
+
+def _color_grafico(color):
+    """DrawingML (gráficos) usa RGB de 6 dígitos; convierte desde ARGB si aplica."""
+    color = str(color or "").replace("#", "")
+    return color[-6:] if len(color) == 8 else color
+
+
+def _preparar_grafico_barras(ch, colores=None, etiquetas=True, leyenda="b"):
+    if colores:
+        for serie, color in zip(ch.series, colores):
+            serie.graphicalProperties = GraphicalProperties(
+                solidFill=_color_grafico(color))
+    if etiquetas:
+        ch.dataLabels = DataLabelList()
+        ch.dataLabels.showVal = True
+        ch.dataLabels.numFmt = '0'
+    ch.legend.position = leyenda
+    ch.height = 5.2
+    ch.width = 10.8
+    return ch
+
+
+def crear_dashboard(wb, metricas, fecha_gen):
+    """Hoja de dashboard con KPIs y gráficos nativos, lista para imprimir/enviar."""
+    ws = wb.create_sheet("Dashboard", 0)
+    ws.sheet_view.showGridLines = False
+    ws.sheet_properties.tabColor = NEVASA_OSCURO
+    dws, r = crear_hoja_datos_graficos(wb, metricas)
+
+    for col in range(1, 11):
+        ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = 11
+
+    ws.row_dimensions[1].height = 30
+    ws.row_dimensions[2].height = 16
+    ws.row_dimensions[4].height = 18
+    ws.row_dimensions[5].height = 30
+
+    _merge_y_escribir(ws, 1, 1, 1, 10, "DASHBOARD DE ESTATUS - SISTEMA GPI CB",
+                      FONT_TITULO, ALIGN_CENTER)
+    _merge_y_escribir(ws, 2, 1, 2, 10,
+                      f"Fecha de Generación: {fecha_gen}   |   "
+                      "Fuente: Seguimiento Requerimientos NevasaCB.xlsx",
+                      FONT_FECHA, ALIGN_CENTER)
+
+    # --- KPIs ---
+    _, fill_indicador, font_indicador = obtener_indicador(metricas["pct_numero"])
+    kpis = [
+        ("TOTAL", metricas["total"],
+         Font(name="Calibri", size=18, bold=True, color=NEVASA_OSCURO), None),
+        ("COMPLETADOS", metricas["completados"],
+         Font(name="Calibri", size=18, bold=True, color=CHART_COLOR_COMPLETADO), None),
+        ("EN PROGRESO", metricas["en_progreso"],
+         Font(name="Calibri", size=18, bold=True, color=NEVASA_NARANJA), None),
+        ("PENDIENTES", metricas["pendientes"],
+         Font(name="Calibri", size=18, bold=True, color=NEVASA_GRIS), None),
+        ("% CUMPLIMIENTO", metricas["porcentaje"],
+         font_indicador, fill_indicador),
+    ]
+    fill_kpi = PatternFill(start_color=NEVASA_CLARO, end_color=NEVASA_CLARO, fill_type="solid")
+    for i, (label, valor, font_valor, fill_valor) in enumerate(kpis):
+        c1 = 1 + i * 2
+        c2 = c1 + 1
+        ws.merge_cells(start_row=4, start_column=c1, end_row=4, end_column=c2)
+        _aplicar_estilo_celda(ws.cell(4, c1, label),
+                              font=Font(name="Calibri", size=9, bold=True, color=BLANCO),
+                              fill=FILL_HEADER, alignment=ALIGN_CENTER)
+        ws.cell(4, c2).fill = FILL_HEADER
+
+        ws.merge_cells(start_row=5, start_column=c1, end_row=5, end_column=c2)
+        relleno = fill_valor if fill_valor is not None else fill_kpi
+        _aplicar_estilo_celda(ws.cell(5, c1, valor), font=font_valor, fill=relleno,
+                              alignment=ALIGN_CENTER, border=THIN_BORDER)
+        ws.cell(5, c2).fill = relleno
+        ws.cell(5, c2).border = THIN_BORDER
+
+    # --- Gráfico 1: Distribución por Etapa (dona) ---
+    ch = DoughnutChart()
+    ch.title = "Distribución por Etapa"
+    ch.add_data(Reference(dws, min_col=2, min_row=1, max_row=r["estados"]),
+                titles_from_data=True)
+    ch.set_categories(Reference(dws, min_col=1, min_row=2, max_row=r["estados"]))
+    serie = ch.series[0]
+    for idx, estado in enumerate(r["lista_estados"]):
+        punto = DataPoint(idx=idx)
+        punto.graphicalProperties = GraphicalProperties(
+            solidFill=_color_grafico(CHART_COLOR_ESTADO.get(estado, NEVASA_GRIS)))
+        serie.dPt.append(punto)
+    ch.dataLabels = DataLabelList()
+    ch.dataLabels.showPercent = True
+    ch.legend.position = "r"
+    ch.height = 5.2
+    ch.width = 10.8
+    ws.add_chart(ch, "A7")
+
+    # --- Gráfico 2: Requerimientos por Área (barras apiladas) ---
+    ch = BarChart()
+    ch.type = "col"
+    ch.grouping = "stacked"
+    ch.overlap = 100
+    ch.title = "Requerimientos por Área"
+    ch.add_data(Reference(dws, min_col=5, max_col=7, min_row=1, max_row=r["areas"]),
+                titles_from_data=True)
+    ch.set_categories(Reference(dws, min_col=4, min_row=2, max_row=r["areas"]))
+    _preparar_grafico_barras(
+        ch, [CHART_COLOR_PENDIENTE, CHART_COLOR_PROGRESO, CHART_COLOR_COMPLETADO])
+    ch.y_axis.title = "Requerimientos"
+    ws.add_chart(ch, "F7")
+
+    # --- Gráfico 3: Requerimientos por Tipo (barras apiladas) ---
+    ch = BarChart()
+    ch.type = "col"
+    ch.grouping = "stacked"
+    ch.overlap = 100
+    ch.title = "Requerimientos por Tipo"
+    ch.add_data(Reference(dws, min_col=10, max_col=12, min_row=1, max_row=r["tipos"]),
+                titles_from_data=True)
+    ch.set_categories(Reference(dws, min_col=9, min_row=2, max_row=r["tipos"]))
+    _preparar_grafico_barras(
+        ch, [CHART_COLOR_PENDIENTE, CHART_COLOR_PROGRESO, CHART_COLOR_COMPLETADO])
+    ws.add_chart(ch, "A17")
+
+    # --- Gráfico 4: Volumen por Período (columnas) ---
+    ch = BarChart()
+    ch.type = "col"
+    ch.title = "Requerimientos por Período"
+    ch.add_data(Reference(dws, min_col=15, min_row=1, max_row=r["periodos"]),
+                titles_from_data=True)
+    ch.set_categories(Reference(dws, min_col=14, min_row=2, max_row=r["periodos"]))
+    _preparar_grafico_barras(ch, [NEVASA_NARANJA], leyenda="b")
+    ch.legend = None
+    ch.y_axis.title = "Requerimientos"
+    ws.add_chart(ch, "F17")
+
+    # --- Gráfico 5: % Cumplimiento por Período (línea) ---
+    ch = LineChart()
+    ch.title = "% Cumplimiento por Período"
+    ch.add_data(Reference(dws, min_col=16, min_row=1, max_row=r["periodos"]),
+                titles_from_data=True)
+    ch.set_categories(Reference(dws, min_col=14, min_row=2, max_row=r["periodos"]))
+    ch.y_axis.number_format = '0%'
+    ch.y_axis.scaling.min = 0
+    ch.y_axis.scaling.max = 1
+    ch.series[0].graphicalProperties = GraphicalProperties(
+        ln=LineProperties(solidFill=_color_grafico(NEVASA_OSCURO), w=28000))
+    ch.dataLabels = DataLabelList()
+    ch.dataLabels.showVal = True
+    ch.dataLabels.numFmt = '0%'
+    ch.legend = None
+    ch.height = 5.2
+    ch.width = 10.8
+    ws.add_chart(ch, "A27")
+
+    # --- Gráfico 6: Certificación Nevasa - Aprobación PAP (barras horizontales) ---
+    ch = BarChart()
+    ch.type = "bar"
+    ch.title = "Certificación Nevasa - Aprobación PAP"
+    ch.add_data(Reference(dws, min_col=19, min_row=1, max_row=r["pap"]),
+                titles_from_data=True)
+    ch.set_categories(Reference(dws, min_col=18, min_row=2, max_row=r["pap"]))
+    ch.dataLabels = DataLabelList()
+    ch.dataLabels.showVal = True
+    ch.dataLabels.numFmt = '0'
+    ch.legend = None
+    ch.height = 5.2
+    ch.width = 10.8
+    serie = ch.series[0]
+    for idx, color in enumerate(["FF2E7D32", "FFFA4616"]):
+        punto = DataPoint(idx=idx)
+        punto.graphicalProperties = GraphicalProperties(
+            solidFill=_color_grafico(color))
+        serie.dPt.append(punto)
+    ws.add_chart(ch, "F27")
+
+    # --- Gráfico 7: Distribución por Prioridad (barras horizontales) ---
+    ch = BarChart()
+    ch.type = "bar"
+    ch.title = "Distribución por Prioridad"
+    ch.add_data(Reference(dws, min_col=22, min_row=1, max_row=r["prioridades"]),
+                titles_from_data=True)
+    ch.set_categories(Reference(dws, min_col=21, min_row=2, max_row=r["prioridades"]))
+    _preparar_grafico_barras(ch, [NEVASA_OSCURO], leyenda="b")
+    ch.legend = None
+    ws.add_chart(ch, "A37")
+
+    # --- Criterios del reporte ---
+    _merge_y_escribir(
+        ws, 37, 6, 46, 10,
+        "CRITERIOS DEL REPORTE\n"
+        "• Completados: Producción, Certificación Nevasa y Cancelado.\n"
+        "• En Progreso: Análisis, Desarrollo y Certificación Creasys.\n"
+        "• Pendientes: Pendiente, Sin Formalizar y Stand By.\n"
+        "• Certificación Nevasa: 'Aprobados PAP' corresponde a la columna "
+        "Aprobado PAP con valor; 'Pendientes de Aprobación' son los que se "
+        "notifican al área de QA.\n"
+        "• El detalle requerimiento a requerimiento está en las hojas "
+        "'Detalle por área' y 'Resumen Ejecutivo'.",
+        Font(name="Calibri", size=9, color=NEVASA_OSCURO),
+        Alignment(horizontal="left", vertical="top", wrap_text=True),
+        fill=PatternFill(start_color=NEVASA_CLARO, end_color=NEVASA_CLARO, fill_type="solid"))
+
+    # --- Configuración de impresión: 1 página A4 horizontal ---
+    ws.print_area = "A1:J46"
+    ws.page_setup.orientation = "landscape"
+    ws.page_setup.paperSize = ws.PAPERSIZE_A4
+    ws.page_setup.fitToWidth = 1
+    ws.page_setup.fitToHeight = 1
+    ws.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)
+    ws.page_margins = PageMargins(left=0.3, right=0.3, top=0.4, bottom=0.4,
+                                  header=0.1, footer=0.1)
+
+    return ws, dws
+
+
 def main():
     print(f"Leyendo fuente: {ARCHIVO_FUENTE}")
     filas = leer_fuente()
@@ -863,9 +1173,12 @@ def main():
     wb = openpyxl.Workbook()
     wb.remove(wb.active)
 
+    _, ws_datos = crear_dashboard(wb, metricas, fecha_gen)
     crear_resumen_ejecutivo(wb, metricas, fecha_gen)
     crear_detalle_por_area(wb, filas, fecha_gen)
     crear_requerimientos_produccion(wb, filas, fecha_gen)
+    # Dejar la hoja de datos de gráficos al final del libro
+    wb.move_sheet(ws_datos, offset=len(wb.sheetnames) - 1 - wb.sheetnames.index(ws_datos.title))
 
     archivo_temp = ARCHIVO_SALIDA_REPORTE.replace(".xlsx", "_temp.xlsx")
     wb.save(archivo_temp)
