@@ -19,7 +19,7 @@ python generar_reporte_nevasa.py
 
 | Hoja | Contenido |
 |---|---|
-| Dashboard | KPIs y 6 gráficos (etapas, áreas, tipos, períodos, % cumplimiento y PAP). 1 página A4 horizontal |
+| Dashboard | KPIs y 6 gráficos distribuidos en la grilla A:U (etapas, PAP, tipos, períodos, % cumplimiento y áreas). Impresión A4 horizontal en 2 páginas |
 | Resumen Ejecutivo | Métricas, indicadores, distribuciones y sub-análisis de Certificación Nevasa (aprobados PAP) |
 | Detalle por Área | Listado de requerimientos por área |
 | Requerimientos Cerrados | Requerimientos en Producción agrupados por área |
