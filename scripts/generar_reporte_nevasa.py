@@ -20,9 +20,10 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.chart import BarChart, DoughnutChart, LineChart, Reference
 from openpyxl.chart.label import DataLabelList
-from openpyxl.chart.marker import DataPoint
+from openpyxl.chart.marker import DataPoint, Marker
 from openpyxl.chart.shapes import GraphicalProperties
 from openpyxl.drawing.line import LineProperties
+from openpyxl.drawing.text import CharacterProperties, ParagraphProperties
 from openpyxl.worksheet.properties import PageSetupProperties
 from openpyxl.worksheet.page import PageMargins
 
@@ -923,19 +924,12 @@ def crear_hoja_datos_graficos(wb, metricas):
         [("Aprobados PAP", cert["aprobados"]),
          ("Pendientes de Aprobación", cert["pendientes"])])
 
-    # Prioridades
-    prioridades = [p for p in ORDEN_PRIORIDADES if p in metricas["por_prioridad"]]
-    n_prio = escribir_tabla(
-        21, ["Prioridad", "Cantidad"],
-        [(p, metricas["por_prioridad"][p]) for p in prioridades])
-
     return ws, {
         "estados": n_estados,
         "areas": n_areas,
         "tipos": n_tipos,
         "periodos": n_periodos,
         "pap": n_pap,
-        "prioridades": n_prio,
         "lista_estados": estados,
     }
 
@@ -946,7 +940,19 @@ def _color_grafico(color):
     return color[-6:] if len(color) == 8 else color
 
 
-def _preparar_grafico_barras(ch, colores=None, etiquetas=True, leyenda="b"):
+def _estilizar_titulo(ch, texto, sz=1100):
+    """Título del gráfico con tamaño controlado para que no se desborde."""
+    ch.title = texto
+    try:
+        for p in ch.title.tx.rich.p:
+            p.pPr = ParagraphProperties(
+                defRPr=CharacterProperties(sz=sz, b=True, solidFill="333F48"))
+    except Exception:
+        pass
+
+
+def _preparar_grafico(ch, colores=None, etiquetas=False, leyenda="b",
+                      alto=4.9, ancho=10.0):
     if colores:
         for serie, color in zip(ch.series, colores):
             serie.graphicalProperties = GraphicalProperties(
@@ -955,9 +961,12 @@ def _preparar_grafico_barras(ch, colores=None, etiquetas=True, leyenda="b"):
         ch.dataLabels = DataLabelList()
         ch.dataLabels.showVal = True
         ch.dataLabels.numFmt = '0'
-    ch.legend.position = leyenda
-    ch.height = 5.2
-    ch.width = 10.8
+    if leyenda:
+        ch.legend.position = leyenda
+    else:
+        ch.legend = None
+    ch.height = alto
+    ch.width = ancho
     return ch
 
 
@@ -969,12 +978,14 @@ def crear_dashboard(wb, metricas, fecha_gen):
     dws, r = crear_hoja_datos_graficos(wb, metricas)
 
     for col in range(1, 11):
-        ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = 11
+        ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = 12
 
-    ws.row_dimensions[1].height = 30
-    ws.row_dimensions[2].height = 16
-    ws.row_dimensions[4].height = 18
-    ws.row_dimensions[5].height = 30
+    ws.row_dimensions[1].height = 26
+    ws.row_dimensions[2].height = 14
+    ws.row_dimensions[3].height = 10
+    ws.row_dimensions[4].height = 15
+    ws.row_dimensions[5].height = 26
+    ws.row_dimensions[6].height = 14
 
     _merge_y_escribir(ws, 1, 1, 1, 10, "DASHBOARD DE ESTATUS - SISTEMA GPI CB",
                       FONT_TITULO, ALIGN_CENTER)
@@ -1016,7 +1027,7 @@ def crear_dashboard(wb, metricas, fecha_gen):
 
     # --- Gráfico 1: Distribución por Etapa (dona) ---
     ch = DoughnutChart()
-    ch.title = "Distribución por Etapa"
+    _estilizar_titulo(ch, "Distribución por Etapa")
     ch.add_data(Reference(dws, min_col=2, min_row=1, max_row=r["estados"]),
                 titles_from_data=True)
     ch.set_categories(Reference(dws, min_col=1, min_row=2, max_row=r["estados"]))
@@ -1029,8 +1040,8 @@ def crear_dashboard(wb, metricas, fecha_gen):
     ch.dataLabels = DataLabelList()
     ch.dataLabels.showPercent = True
     ch.legend.position = "r"
-    ch.height = 5.2
-    ch.width = 10.8
+    ch.height = 4.9
+    ch.width = 10.0
     ws.add_chart(ch, "A7")
 
     # --- Gráfico 2: Requerimientos por Área (barras apiladas) ---
@@ -1038,12 +1049,13 @@ def crear_dashboard(wb, metricas, fecha_gen):
     ch.type = "col"
     ch.grouping = "stacked"
     ch.overlap = 100
-    ch.title = "Requerimientos por Área"
+    ch.gapWidth = 70
+    _estilizar_titulo(ch, "Requerimientos por Área")
     ch.add_data(Reference(dws, min_col=5, max_col=7, min_row=1, max_row=r["areas"]),
                 titles_from_data=True)
     ch.set_categories(Reference(dws, min_col=4, min_row=2, max_row=r["areas"]))
-    _preparar_grafico_barras(
-        ch, [CHART_COLOR_PENDIENTE, CHART_COLOR_PROGRESO, CHART_COLOR_COMPLETADO])
+    _preparar_grafico(ch, [CHART_COLOR_PENDIENTE, CHART_COLOR_PROGRESO,
+                           CHART_COLOR_COMPLETADO], leyenda="b")
     ch.y_axis.title = "Requerimientos"
     ws.add_chart(ch, "F7")
 
@@ -1052,49 +1064,56 @@ def crear_dashboard(wb, metricas, fecha_gen):
     ch.type = "col"
     ch.grouping = "stacked"
     ch.overlap = 100
-    ch.title = "Requerimientos por Tipo"
+    ch.gapWidth = 70
+    _estilizar_titulo(ch, "Requerimientos por Tipo")
     ch.add_data(Reference(dws, min_col=10, max_col=12, min_row=1, max_row=r["tipos"]),
                 titles_from_data=True)
     ch.set_categories(Reference(dws, min_col=9, min_row=2, max_row=r["tipos"]))
-    _preparar_grafico_barras(
-        ch, [CHART_COLOR_PENDIENTE, CHART_COLOR_PROGRESO, CHART_COLOR_COMPLETADO])
-    ws.add_chart(ch, "A17")
+    _preparar_grafico(ch, [CHART_COLOR_PENDIENTE, CHART_COLOR_PROGRESO,
+                           CHART_COLOR_COMPLETADO], leyenda="b")
+    ws.add_chart(ch, "A18")
 
     # --- Gráfico 4: Volumen por Período (columnas) ---
     ch = BarChart()
     ch.type = "col"
-    ch.title = "Requerimientos por Período"
+    ch.gapWidth = 90
+    _estilizar_titulo(ch, "Requerimientos por Período")
     ch.add_data(Reference(dws, min_col=15, min_row=1, max_row=r["periodos"]),
                 titles_from_data=True)
     ch.set_categories(Reference(dws, min_col=14, min_row=2, max_row=r["periodos"]))
-    _preparar_grafico_barras(ch, [NEVASA_NARANJA], leyenda="b")
-    ch.legend = None
+    _preparar_grafico(ch, [NEVASA_NARANJA], etiquetas=True, leyenda=None)
     ch.y_axis.title = "Requerimientos"
-    ws.add_chart(ch, "F17")
+    ws.add_chart(ch, "F18")
 
     # --- Gráfico 5: % Cumplimiento por Período (línea) ---
     ch = LineChart()
-    ch.title = "% Cumplimiento por Período"
+    _estilizar_titulo(ch, "% Cumplimiento por Período")
     ch.add_data(Reference(dws, min_col=16, min_row=1, max_row=r["periodos"]),
                 titles_from_data=True)
     ch.set_categories(Reference(dws, min_col=14, min_row=2, max_row=r["periodos"]))
     ch.y_axis.number_format = '0%'
     ch.y_axis.scaling.min = 0
     ch.y_axis.scaling.max = 1
-    ch.series[0].graphicalProperties = GraphicalProperties(
+    serie = ch.series[0]
+    serie.graphicalProperties = GraphicalProperties(
         ln=LineProperties(solidFill=_color_grafico(NEVASA_OSCURO), w=28000))
+    serie.marker = Marker(symbol="circle", size=7)
+    serie.marker.graphicalProperties = GraphicalProperties(
+        solidFill=_color_grafico(NEVASA_NARANJA),
+        ln=LineProperties(solidFill=_color_grafico(NEVASA_NARANJA), w=12000))
     ch.dataLabels = DataLabelList()
     ch.dataLabels.showVal = True
     ch.dataLabels.numFmt = '0%'
     ch.legend = None
-    ch.height = 5.2
-    ch.width = 10.8
-    ws.add_chart(ch, "A27")
+    ch.height = 4.9
+    ch.width = 10.0
+    ws.add_chart(ch, "A29")
 
     # --- Gráfico 6: Certificación Nevasa - Aprobación PAP (barras horizontales) ---
     ch = BarChart()
     ch.type = "bar"
-    ch.title = "Certificación Nevasa - Aprobación PAP"
+    ch.gapWidth = 70
+    _estilizar_titulo(ch, "Certificación Nevasa - Aprobación PAP")
     ch.add_data(Reference(dws, min_col=19, min_row=1, max_row=r["pap"]),
                 titles_from_data=True)
     ch.set_categories(Reference(dws, min_col=18, min_row=2, max_row=r["pap"]))
@@ -1102,30 +1121,19 @@ def crear_dashboard(wb, metricas, fecha_gen):
     ch.dataLabels.showVal = True
     ch.dataLabels.numFmt = '0'
     ch.legend = None
-    ch.height = 5.2
-    ch.width = 10.8
+    ch.height = 4.9
+    ch.width = 10.0
     serie = ch.series[0]
     for idx, color in enumerate(["FF2E7D32", "FFFA4616"]):
         punto = DataPoint(idx=idx)
         punto.graphicalProperties = GraphicalProperties(
             solidFill=_color_grafico(color))
         serie.dPt.append(punto)
-    ws.add_chart(ch, "F27")
+    ws.add_chart(ch, "F29")
 
-    # --- Gráfico 7: Distribución por Prioridad (barras horizontales) ---
-    ch = BarChart()
-    ch.type = "bar"
-    ch.title = "Distribución por Prioridad"
-    ch.add_data(Reference(dws, min_col=22, min_row=1, max_row=r["prioridades"]),
-                titles_from_data=True)
-    ch.set_categories(Reference(dws, min_col=21, min_row=2, max_row=r["prioridades"]))
-    _preparar_grafico_barras(ch, [NEVASA_OSCURO], leyenda="b")
-    ch.legend = None
-    ws.add_chart(ch, "A37")
-
-    # --- Criterios del reporte ---
+    # --- Criterios del reporte (franja inferior, ancho completo) ---
     _merge_y_escribir(
-        ws, 37, 6, 46, 10,
+        ws, 41, 1, 48, 10,
         "CRITERIOS DEL REPORTE\n"
         "• Completados: Producción, Certificación Nevasa y Cancelado.\n"
         "• En Progreso: Análisis, Desarrollo y Certificación Creasys.\n"
@@ -1133,14 +1141,15 @@ def crear_dashboard(wb, metricas, fecha_gen):
         "• Certificación Nevasa: 'Aprobados PAP' corresponde a la columna "
         "Aprobado PAP con valor; 'Pendientes de Aprobación' son los que se "
         "notifican al área de QA.\n"
-        "• El detalle requerimiento a requerimiento está en las hojas "
-        "'Detalle por área' y 'Resumen Ejecutivo'.",
+        "• La distribución por prioridad está en el 'Resumen Ejecutivo' "
+        "(sección 6). El detalle requerimiento a requerimiento está en las "
+        "hojas 'Detalle por área' y 'Requerimientos Cerrados'.",
         Font(name="Calibri", size=9, color=NEVASA_OSCURO),
         Alignment(horizontal="left", vertical="top", wrap_text=True),
         fill=PatternFill(start_color=NEVASA_CLARO, end_color=NEVASA_CLARO, fill_type="solid"))
 
     # --- Configuración de impresión: 1 página A4 horizontal ---
-    ws.print_area = "A1:J46"
+    ws.print_area = "A1:J48"
     ws.page_setup.orientation = "landscape"
     ws.page_setup.paperSize = ws.PAPERSIZE_A4
     ws.page_setup.fitToWidth = 1
