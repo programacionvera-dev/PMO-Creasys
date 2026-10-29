@@ -252,8 +252,8 @@ def main():
     fecha = datetime.now().strftime('%d/%m/%Y')
     
     # Calcular métricas (misma lógica que generar_reporte_nevasa.py)
-    ESTADOS_COMPLETADO = {"Producción", "Certificación Nevasa"}
-    ESTADOS_EN_PROGRESO = {"Sin Formalizar", "Análisis", "Desarrollo", "Certificación Creasys", "Stand By", "Cancelado"}
+    ESTADOS_COMPLETADO = {"Producción", "Certificación Nevasa", "Cancelado"}
+    ESTADOS_EN_PROGRESO = {"Análisis", "Desarrollo", "Certificación Creasys"}
     
     total = len(todos_items)
     completados = sum(1 for item in todos_items if item['etapa'] in ESTADOS_COMPLETADO)

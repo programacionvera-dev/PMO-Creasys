@@ -19,8 +19,8 @@ from config.rutas import ARCHIVO_FUENTE, ARCHIVO_SALIDA_REPORTE
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
-ESTADOS_COMPLETADO = {"Producción", "Certificación Nevasa"}
-ESTADOS_EN_PROGRESO = {"Sin Formalizar", "Análisis", "Desarrollo", "Certificación Creasys", "Stand By", "Cancelado"}
+ESTADOS_COMPLETADO = {"Producción", "Certificación Nevasa", "Cancelado"}
+ESTADOS_EN_PROGRESO = {"Análisis", "Desarrollo", "Certificación Creasys"}
 
 # Colores base - Nevasa Corporativo
 NEVASA_OSCURO = "FF333F48"
@@ -121,8 +121,10 @@ ORDEN_ESTADOS = [
     "Certificación Creasys",
     "Desarrollo",
     "Análisis",
-    "Cancelado",
-    "Pendiente"
+    "Sin Formalizar",
+    "Pendiente",
+    "Stand By",
+    "Cancelado"
 ]
 
 
@@ -313,6 +315,14 @@ def calcular_metricas(filas):
         por_tipo[f["tipo"]] += 1
         por_tipo_estado[f["tipo"]][f["estado_raw"]] += 1
 
+    # Sub-análisis Certificación Nevasa: aprobados PAP vs pendientes de aprobación
+    cert_nevasa_items = [f for f in filas if f["estado_raw"] == "Certificación Nevasa"]
+    cert_nevasa_total = len(cert_nevasa_items)
+    cert_nevasa_aprobados = sum(
+        1 for f in cert_nevasa_items if str(f["aprobado_pap"]).strip()
+    )
+    cert_nevasa_pendientes = cert_nevasa_total - cert_nevasa_aprobados
+
     return {
         "total": total,
         "completados": completados,
@@ -320,6 +330,12 @@ def calcular_metricas(filas):
         "pendientes": pendientes,
         "porcentaje": porcentaje,
         "pct_numero": pct_numero,
+        "cert_nevasa": {
+            "total": cert_nevasa_total,
+            "aprobados": cert_nevasa_aprobados,
+            "pendientes": cert_nevasa_pendientes,
+            "pct_aprobados": (cert_nevasa_aprobados / cert_nevasa_total) if cert_nevasa_total > 0 else 0,
+        },
         "por_estado": dict(por_estado),
         "por_area": por_area,
         "por_periodo": por_periodo,
@@ -444,8 +460,10 @@ def crear_resumen_ejecutivo(wb, metricas, fecha_gen):
 
     # 3. Distribución por Estado
     row += 2
-    _merge_y_escribir(ws, row, 1, row, 9, "3. DISTRIBUCIÓN POR ESTADO", FONT_SECCION)
+    row_titulo_estado = row
+    _merge_y_escribir(ws, row, 1, row, 4, "3. DISTRIBUCIÓN POR ESTADO", FONT_SECCION)
     row += 1
+    row_header_estado = row
     for c, h in enumerate(["Estado", "Cantidad", "% del Total"], 1):
         celda = ws.cell(row, c, h)
         _aplicar_estilo_celda(celda, font=FONT_HEADER, fill=FILL_HEADER, border=THIN_BORDER)
@@ -464,6 +482,33 @@ def crear_resumen_ejecutivo(wb, metricas, fecha_gen):
             if c == 3:  # Formato porcentaje
                 celda.number_format = '0%'
         row += 1
+
+    # 3b. Sub-análisis Certificación Nevasa - Aprobación PAP (al costado)
+    cert = metricas["cert_nevasa"]
+    sub_col = 5  # Columna E
+    ws.column_dimensions["E"].width = 26
+    _merge_y_escribir(ws, row_titulo_estado, sub_col, row_titulo_estado, sub_col + 2,
+                      "CERTIFICACIÓN NEVASA - APROBACIÓN PAP", FONT_SECCION, ALIGN_CENTER)
+    for c, h in enumerate(["Estado Aprobación", "Cantidad", "%"], sub_col):
+        celda = ws.cell(row_header_estado, c, h)
+        _aplicar_estilo_celda(celda, font=FONT_HEADER, fill=FILL_HEADER, border=THIN_BORDER)
+    sub_row = row_header_estado + 1
+    total_cert = cert["total"]
+    filas_cert = [
+        ("Aprobados PAP", cert["aprobados"],
+         (cert["aprobados"] / total_cert) if total_cert > 0 else 0, FILL_PRODUCCION),
+        ("Pendientes de Aprobación", cert["pendientes"],
+         (cert["pendientes"] / total_cert) if total_cert > 0 else 0, FILL_PENDIENTE),
+        ("Total en Cert. Nevasa", total_cert, 1 if total_cert > 0 else 0, FILL_QA_NEVASA),
+    ]
+    for texto, cant, pct, fill in filas_cert:
+        for c, v in enumerate([texto, cant, pct], sub_col):
+            celda = ws.cell(sub_row, c, v)
+            _aplicar_estilo_celda(celda, font=FONT_BODY, border=THIN_BORDER, fill=fill,
+                                  alignment=ALIGN_CENTER if c > sub_col else None)
+            if c == sub_col + 2:
+                celda.number_format = '0%'
+        sub_row += 1
 
     # 4. Distribución por Área
     row += 1
@@ -543,7 +588,7 @@ def crear_resumen_ejecutivo(wb, metricas, fecha_gen):
             continue
         cant_total = metricas["por_tipo"][tipo]
         estados = metricas["por_tipo_estado"].get(tipo, {})
-        cant_pendiente = estados.get("Pendiente", 0) + estados.get("Sin Formalizar", 0)
+        cant_pendiente = estados.get("Pendiente", 0) + estados.get("Sin Formalizar", 0) + estados.get("Stand By", 0)
         cant_cert_qa = estados.get("Certificación Nevasa", 0)
         cant_desarrollo = estados.get("Desarrollo", 0) + estados.get("Análisis", 0)
         cant_produccion = estados.get("Producción", 0)
@@ -812,6 +857,8 @@ def main():
     print(f"  % Cumplimiento: {metricas['porcentaje']}")
     texto_ind, _, _ = obtener_indicador(metricas["pct_numero"])
     print(f"  Indicador: {texto_ind}")
+    cert = metricas["cert_nevasa"]
+    print(f"  Certificación Nevasa: {cert['total']} (Aprobados PAP: {cert['aprobados']}, Pendientes de aprobación: {cert['pendientes']})")
 
     wb = openpyxl.Workbook()
     wb.remove(wb.active)

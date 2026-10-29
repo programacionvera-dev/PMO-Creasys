@@ -67,9 +67,9 @@
     "asignado_a": 5
   },
   "estados": {
-    "completado": ["Producción", "Certificación Nevasa"],
-    "en_progreso": ["Sin Formalizar", "Análisis", "Desarrollo", "Certificación Creasys", "Stand By", "Cancelado"],
-    "pendiente": ["Pendiente"]
+    "completado": ["Producción", "Certificación Nevasa", "Cancelado"],
+    "en_progreso": ["Análisis", "Desarrollo", "Certificación Creasys"],
+    "pendiente": ["Pendiente","Sin Formalizar", "Stand By"]
   },
   "estados_riesgo": ["Abierto", "Mitigado", "Cerrado"],
   "categorias_lesson": ["Técnico", "Proceso", "Comunicación", "Recurso", "Cliente"],
